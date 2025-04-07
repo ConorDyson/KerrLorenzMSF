@@ -40,7 +40,7 @@ The spin-weight of each MP projected component follows from counting the number 
 
 *Configuration parameters*
 
-The input parameters are read from files: config/config_iConfig.txt. Here iConfig is a string. Note that you will need one config file for each value of m (the azimuthal mode number). 
+The input parameters are read from files: config/config_iConfig.txt. Here iConfig is a string with a naming convention (see below). Note that you will need one config file for each value of m (the azimuthal mode number). 
 
 Some of the parameters in the config files are irrelevant; they are used only in the 2+1D time-domain calculation. 
 Below is a list of the parameters that are relevant in metric reconstruction:
@@ -67,16 +67,17 @@ Below is a list of the parameters that are relevant in metric reconstruction:
 
 *Naming convention*
 
-There is a naming convention for <iConfig>: it should be in the form XX-YYY-ZZZ. 
-XX are the first two digits of "a" after the decimal point (i.e. 00 for Schwarzschild, 60 for a=0.6M, 99 for a=0.99M).
-YYY are the digits of r0 (with 060 implying r0 = 6.0).
-ZZZ are the run numbers, with the first digit typically labelling the internal parameter choices (such as grid size), and the latter two digits indicating the value of 'm'. The numbers 0ZZ are reserved for testing, whereas the numbers zZZ with z >= 1 are for production runs.
+There is a naming convention for the config_string: it should be in the form XX-YYY-ZZZ. 
+- XX are the first two digits of "a" after the decimal point (i.e. 00 for Schwarzschild, 60 for a=0.6M, 99 for a=0.99M).
+- YYY are the digits of r0 (with 060 implying r0 = 6.0).
+- ZZZ are the run numbers, with the first digit typically labelling the internal parameter choices (such as grid size), and the latter two digits indicating the value of 'm'. The numbers 0ZZ are reserved for testing, whereas the numbers zZZ with z >= 1 are for production runs.
 
 *Example config files*
 
 Example config files are provided for r0 = 6M, and black hole spins a = 0, 0.6 and 0.99, with two choices of grid parameters:
  - on a grid spacing of M/4, in the r* domain (-20, 100), up to l_max = 20. 
  - on a grid of spacing M/8, in the range r* \in (-30, 250) up to l_max = 30.
+ - 
 The first set is quicker to work with. The first set starts at ZZZ=001, and the second set at ZZZ=021, like this:
 
 Set 1:  M/4 spacing, (-20,100) domain, l_max = 20.
