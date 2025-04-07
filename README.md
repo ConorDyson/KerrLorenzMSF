@@ -77,7 +77,7 @@ There is a naming convention for the config_string: it should be in the form XX-
 Example config files are provided for r0 = 6M, and black hole spins a = 0, 0.6 and 0.99, with two choices of grid parameters:
  - on a grid spacing of M/4, in the r* domain (-20, 100) up to l_max = 20. 
  - on a grid of spacing M/8, in the range r* \in (-30, 250) up to l_max = 30.
- - 
+
 The first set is quicker to work with. The first set starts at ZZZ=001, and the second set at ZZZ=021, like this:
 
 Set 1:  M/4 spacing, (-20,100) domain, l_max = 20.
