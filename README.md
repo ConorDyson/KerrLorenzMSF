@@ -36,9 +36,10 @@ The 10 components of the metric perturbation (MP) that I use are h_{ab} projecte
 The spin-weight of each MP projected component follows from counting the number of m+ projections and subtracting the number of m- projections. The radial functions labelled by l,m are the MP components projected onto a spin-weighted spherical harmonic of the appropriate spin-weight.
 
 *Configuration parameters*
-The input parameters are read from files: config/config<iConfig>.txt. Here <iConfig> is a string. Note that you will need one config file for each value of m (the azimuthal mode number). 
+The input parameters are read from files: config/config_iConfig.txt. Here iConfig is a string. Note that you will need one config file for each value of m (the azimuthal mode number). 
 
-Some of the parameters in the config files are irrelevant; they are used only in the 2+1D time-domain calculation. Below is a list of the parameters that are relevant in metric reconstruction:
+Some of the parameters in the config files are irrelevant; they are used only in the 2+1D time-domain calculation. 
+Below is a list of the parameters that are relevant in metric reconstruction:
 
  a: The spin parameter of the black hole.
  r0: The orbital radius (in Boyer-Lindquist coords).
