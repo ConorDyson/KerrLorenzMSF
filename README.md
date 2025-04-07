@@ -15,12 +15,12 @@ There are three main Mathematica notebooks here:
    
 I recommend to run the notebooks on different kernels, since there are likely to be clashes between variable names.
 
-There is also a .m Mathematica script here (metric_reconstruction_calc_radiative.m) which can be run from the command line using:
+There is also a .m Mathematica script here (metric_reconstruction_calc_radiative.m) which can be run from the command line on (e.g.) an HPC using:
 
  wolframscript -file metric_reconstruction_calc_radiative.m -args config_string
 
 where config_string is an appropriate string labelling the config file in config/ (see below). 
-The script is auto-generated from the Initialisation Cells of the corresponding notebook, each time the latter is saved. It does not use section B (see below).
+The script is auto-generated from the Initialisation Cells of the corresponding notebook, each time the latter is saved. It does not run section B of the notebook.
 
 There are some additional notebooks that pre-generate input files for the static (zero-frequency) m=0 calculation. These are:
  - CalcProjectionCoeffs.nb: Calculates coefficients such as <l | cos^2 theta | l’>
