@@ -120,7 +120,7 @@ Note that it is necessary to use a high number of digits ('prec') to solve accur
 Note that the metric perturbation calculated by this notebook will have non-zero mass and non-zero angular momentum in the interior region (r < r0). 
 The mass and a.m. at infinity is determined (numerically) from the coE and coAM coefficients (in the notebook, see section 4. Jumps -> Format). 
 This is the (Kerr analogue of) the Berndtson solution: a Lorenz-gauge MP that is regular at both the horizon and infinity, and with the correct “jump” in mass and AM across the particle radius. 
-One can shift to a MP with the “right” mass and AM at infinity by adding a homogeneous Lorenz-gauge perturbation, but not while maintaining regularity.
+One can shift to a MP with the “right” mass and AM at infinity by adding a homogeneous Lorenz-gauge perturbation, but not while maintaining both regularity and Lorenz gauge.
 
 In the Schwarzschild limit, this code produces an l=1, m=0 mode that, in Barack-Lousto-Sago coordinates, has h9 = 0 everywhere and h8 = 0 at the horizon. 
 By contrast, standard data that is regular on the future horizon has h9 non-zero. To convert between the two, add a homogeneous Lorenz-gauge perturbation. 
