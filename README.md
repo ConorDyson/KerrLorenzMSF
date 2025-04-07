@@ -40,27 +40,26 @@ The input parameters are read from files: config/config_iConfig.txt. Here iConfi
 
 Some of the parameters in the config files are irrelevant; they are used only in the 2+1D time-domain calculation. 
 Below is a list of the parameters that are relevant in metric reconstruction:
-
- a: The spin parameter of the black hole.
- r0: The orbital radius (in Boyer-Lindquist coords).
- m: The azimuthal number of the mode.
- n: The grid spacing in the tortoise  coordinate r* , with Delta r*  =  M / n.
- angres: Angular resolution. The number of grid points in the theta direction is  n*angres.
- lmax: The upper bound on the number of l modes of radial/angular functions to use.
- lplot: After projection onto spherical harmonics, the number of l-modes reliable enough for further use (e.g. plotting).
- nterms: The number of terms to include in the expansion of spheroidal harmonics in the spherical basis.
- inford: The order of the series expansion of the UP solutions at infinity for the kappa(r) functions.
- rgrid: 0 for a linearly-spaced grid in r* (the tortoise coordinate), or 1 for a linearly-spaced grid in r.
- horord: The order of the series expansion of the IN solutions at the horizon for the kappa(r) functions.
- rinf: The value of r at which the UP solution for kappa is evaluated; this is the initial condition for integration inwards.
- xhor: The IN solutions for kappa start at  r = r_+ + xhor.
- rmax: The maximum value of r for the Interpolation Functions for kappa.
- accgoal: Accuracy Goal and Precision Goal for the numerical integrator.
- kapord: The kappa_l function is expanded in a basis of spheroidal harmonics in the range {l-kapord, l+kapord}. Should be at least as large as nterms.
- prec: The number of digits in Working Precision. Should be at least 32.
- rstmin: The minimum value of the tortoise coordinate r* for the grid. 
- rstmax: The maximum value of the tortoise coordinate r* in the grid.
- dformat: The format for exported data. Either Real32 or Real64. The latter is recommended.
+- a: The spin parameter of the black hole.
+- r0: The orbital radius (in Boyer-Lindquist coords).
+- m: The azimuthal number of the mode.
+- n: The grid spacing in the tortoise  coordinate r* , with Delta r*  =  M / n.
+- angres: Angular resolution. The number of grid points in the theta direction is  n*angres.
+- lmax: The upper bound on the number of l modes of radial/angular functions to use.
+- lplot: After projection onto spherical harmonics, the number of l-modes reliable enough for further use (e.g. plotting).
+- nterms: The number of terms to include in the expansion of spheroidal harmonics in the spherical basis.
+- inford: The order of the series expansion of the UP solutions at infinity for the kappa(r) functions.
+- rgrid: 0 for a linearly-spaced grid in r* (the tortoise coordinate), or 1 for a linearly-spaced grid in r.
+- horord: The order of the series expansion of the IN solutions at the horizon for the kappa(r) functions.
+- rinf: The value of r at which the UP solution for kappa is evaluated; this is the initial condition for integration inwards.
+- xhor: The IN solutions for kappa start at  r = r_+ + xhor.
+- rmax: The maximum value of r for the Interpolation Functions for kappa.
+- accgoal: Accuracy Goal and Precision Goal for the numerical integrator.
+- kapord: The kappa_l function is expanded in a basis of spheroidal harmonics in the range {l-kapord, l+kapord}. Should be at least as large as nterms.
+- prec: The number of digits in Working Precision. Should be at least 32.
+- rstmin: The minimum value of the tortoise coordinate r* for the grid. 
+- rstmax: The maximum value of the tortoise coordinate r* in the grid.
+- dformat: The format for exported data. Either Real32 or Real64. The latter is recommended.
 
 *Naming convention*
 There is a naming convention for <iConfig>: it should be in the form XX-YYY-ZZZ. 
