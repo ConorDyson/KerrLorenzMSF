@@ -24,6 +24,7 @@ There are some additional notebooks that pre-generate input files for the static
  - CalcProjectionCoeffs.nb: Calculates coefficients such as <l | cos^2 theta | l’>
  - CalcStaticRadialFunctions.nb: Calculates the various radial functions in closed form.
  - CalcStaticTensorMode.nb: Calculates the components of the homogeneous metric perturbation for m=0.
+ - 
 The output is stored in the folders static/ and completion/.
 
 *Metric components and spin weight*
