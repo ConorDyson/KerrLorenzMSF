@@ -104,7 +104,7 @@ Set 2:  M/8 spacing, (-30,250) domain, l_max = 30.
 
 The notebook for calculating m != 0 modes is:
 - metric_reconstruction_calc_radiative.nb
-- 
+
 Sections 1 to 4 of the calculation are necessary setup. These sections should run in circa 10 minutes, depending on the parameters in "config".
 
 Sections A and B calculate the MP components on a grid. Sections A and B typically take longer to run, depending on the grid parameters. You may choose to run either A or B, instead of both. Now that it is working efficiently, I think that A is the better approach to use. The command-line script only runs part A. 
@@ -133,6 +133,7 @@ The following note from Adam Pound (Aug 2024) explains this more clearly:
 
 The notebook for plotting the results is:
  - metric_reconstruction_visualisation.nb
+
 The section on 1D plotting shows the radial functions; their values at r=r0; and the metric perturbation in Barack & Lousto variables. 
 
 An important plot to check is that showing the “regularization” at r=r0 (example below). The individual spin parts (s=0,s=1,s=2) grow with (l+½) in power law fashion, whereas the combination falls off with a power law. 
