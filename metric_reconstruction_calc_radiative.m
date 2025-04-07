@@ -25,7 +25,7 @@ ClearAll["Global`*"]
 Off[ClebschGordan::phy];Off[ClebschGordan::tri];
 
 
-iConfig="00-060-022";(* Identifies the parameter file. *)
+iConfig="99-060-022";(* Identifies the parameter file. *)
 (* If run as a script, read iConfig from the command line. *)
 If[Length[$ScriptCommandLine]==2,
 iConfig=$ScriptCommandLine[[2]];
@@ -195,7 +195,10 @@ filepath=directory<>"config/";
 filen=filepath<>"config"<>ToString[iConfig]<>".txt";
 s=Import[filen,"String"];
 s1=StringSplit[s,"\n"];
-s2=Map[StringSplit[#,"\t"]&,s1];
+stmp=Map[StringSplit[#,"\t"]&,s1];
+(* Handle the case where spaces were used in place of tabs **)
+altsplit[s_]:={First[#],Last[#]}&@StringSplit[s," "];
+s2=Map[If[Length[#]<2,altsplit[#[[1]]],#]&,stmp];
 configparams=Map[{#[[1]],ToExpression[#[[2]]]}&,s2];
 GetParam[key_]:=Module[{ls,val},
 ls=Select[configparams,#[[1]]==key&];
@@ -261,7 +264,7 @@ qres=GetParam["angres",8]; (* Resolution in the \[Theta] direction: number of po
 dformat=ToString@GetParam["dformat","Real64"]; (* Data format for output files. *)
 
 
-{\[Kappa]ord,rinf,rmax,xhor,inford,horord,accgoal,rstarmin,rstarmax,nres,qres}
+{\[Kappa]ord,rinf,rmax,xhor,inford,horord,accgoal,rstarmin,rstarmax,nres,qres,dformat}
 
 
 (* To remove quantities that are zero to within effective machine precision *)
