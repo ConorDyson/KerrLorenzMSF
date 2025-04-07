@@ -6,6 +6,8 @@ If you make use of this code for your project, please cite the papers above and 
 
 With thanks to Barry Wardell, Patrick Bourg and Conor Dyson for code-testing and feedback.
 
+*Notebooks and scripts*
+
 There are three main Mathematica notebooks here:
  - metric_reconstruction_calc_radiative.nb  does the calculation of the metric perturbation for m != 0 modes, and exports the data.
  - metric_reconstruction_calc_static.nb  does the calculation of the metric perturbation for the m = 0 modes, and exports the data.
@@ -28,6 +30,7 @@ There are some additional notebooks that pre-generate input files for the static
 The output is stored in the folders static/ and completion/.
 
 *Metric components and spin weight*
+
 The 10 components of the metric perturbation (MP) that I use are h_{ab} projected onto the vector legs of an unnormalised version of the Kinnerley (or Carter) tetrad defined in Eq. (7)-(8) of arXiv:2306.16459. These are numbered 1 to 10 and always in the following order:
 
 [ h_{l+l+}, h_{l-l-}, h_{m+ m+}, h_{m- m-}, \[Rho] h_{l+ m+}, \[Rho]* h_{l+ m-}, \[Rho]* h_{l- m+}, \[Rho] h_{l- m-}, \[CapitalSigma] \[CapitalDelta] h_{l+ l-}, h (the trace) ].
@@ -36,6 +39,7 @@ The 10 components of the metric perturbation (MP) that I use are h_{ab} projecte
 The spin-weight of each MP projected component follows from counting the number of m+ projections and subtracting the number of m- projections. The radial functions labelled by l,m are the MP components projected onto a spin-weighted spherical harmonic of the appropriate spin-weight.
 
 *Configuration parameters*
+
 The input parameters are read from files: config/config_iConfig.txt. Here iConfig is a string. Note that you will need one config file for each value of m (the azimuthal mode number). 
 
 Some of the parameters in the config files are irrelevant; they are used only in the 2+1D time-domain calculation. 
@@ -62,12 +66,14 @@ Below is a list of the parameters that are relevant in metric reconstruction:
 - dformat: The format for exported data. Either Real32 or Real64. The latter is recommended.
 
 *Naming convention*
+
 There is a naming convention for <iConfig>: it should be in the form XX-YYY-ZZZ. 
 XX are the first two digits of "a" after the decimal point (i.e. 00 for Schwarzschild, 60 for a=0.6M, 99 for a=0.99M).
 YYY are the digits of r0 (with 060 implying r0 = 6.0).
 ZZZ are the run numbers, with the first digit typically labelling the internal parameter choices (such as grid size), and the latter two digits indicating the value of 'm'. The numbers 0ZZ are reserved for testing, whereas the numbers zZZ with z >= 1 are for production runs.
 
 *Example config files*
+
 Example config files are provided for r0 = 6M, and black hole spins a = 0, 0.6 and 0.99, with two choices of grid parameters:
  - on a grid spacing of M/4, in the r* domain (-20, 100), up to l_max = 20. 
  - on a grid of spacing M/8, in the range r* \in (-30, 250) up to l_max = 30.
@@ -104,6 +110,7 @@ Sections A and B calculate the MP components on a grid. Sections A and B typical
 The output of Section A (1D grid) are functions of r only, for the 10 components projected onto spin-weighted spherical harmonics. The output of Section B (2D grid) are functions of (r,\[Theta]) for the 10 components. 
 
 *Calculation for m = 0 (static)*
+
 For the static sector, use metric_reconstruction_calc_static.nb, after first running the three "Calc" notebooks for initial setup.
 Sections 1 to 6 are necessary to produce output. The later sections are legacy code, used at some point for testing (and I can’t guarantee they will run).
 Note that it is necessary to use a high number of digits ('prec') to solve accurately at high l. For example, choose parameters prec=100 for lmax=20.
