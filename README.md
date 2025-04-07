@@ -22,12 +22,12 @@ There is also a .m Mathematica script here (metric_reconstruction_calc_radiative
 where config_string is an appropriate string labelling the config file in config/ (see below). 
 The script is auto-generated from the Initialisation Cells of the corresponding notebook, each time the latter is saved. It does not run section B of the notebook.
 
-There are some additional notebooks that pre-generate input files for the static (zero-frequency) m=0 calculation. These are:
+There are some additional notebooks that pre-generate some input files for the static (zero-frequency) m=0 calculation. These are:
  - CalcProjectionCoeffs.nb: Calculates coefficients such as <l | cos^2 theta | l’>
  - CalcStaticRadialFunctions.nb: Calculates the various radial functions in closed form.
  - CalcStaticTensorMode.nb: Calculates the components of the homogeneous metric perturbation for m=0.
    
-The output is stored in the folders static/ and completion/.
+These notebooks are independent of one another, and can be run in any order. The output is stored in the folders static/ and completion/.
 
 *Metric components and spin weight*
 
