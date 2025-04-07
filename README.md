@@ -1,4 +1,4 @@
-Code to reconstruct the lm-modes of the metric perturbation in Lorenz gauge, in the frequency domain, for a circular orbit on Kerr spacetime, using the method detailed in the two papers: 
+Mathematica code to reconstruct the lm-modes of the metric perturbation in Lorenz gauge, in the frequency domain, for a circular orbit on Kerr spacetime, using the method detailed in the two papers: 
  - “Metric perturbations of Kerr spacetime in Lorenz gauge: Circular equatorial orbits”, Sam R. Dolan, Leanne Durkan, Chris Kavanagh, Barry Wardell, Class. Quantum Grav. 41, 155011 (2024) [arXiv:2306.16459].
  - "Gravitational Perturbations of Rotating Black Holes in Lorenz Gauge", Sam R. Dolan, Chris Kavanagh, Barry Wardell, Phys. Rev. Lett. 128 (2022) 15, 151101 [arXiv:2108.06344].
   
@@ -28,6 +28,9 @@ There are some additional notebooks that pre-generate some input files for the s
  - CalcStaticTensorMode.nb: Calculates the components of the homogeneous metric perturbation for m=0.
    
 These notebooks are independent of one another, and can be run in any order. The output is stored in the folders static/ and completion/.
+
+The notebook Jigsaw.nb is legacy/deprecated code for static modes, except for one aspect: it contains code for calculating the completion pieces in completion/.
+It is not necessary to run this notebook, because the completion pieces have been included in the git repo, in the static/ directory.
 
 *Metric components and spin weight*
 
