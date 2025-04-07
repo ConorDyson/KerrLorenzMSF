@@ -75,7 +75,7 @@ There is a naming convention for the config_string: it should be in the form XX-
 *Example config files*
 
 Example config files are provided for r0 = 6M, and black hole spins a = 0, 0.6 and 0.99, with two choices of grid parameters:
- - on a grid spacing of M/4, in the r* domain (-20, 100), up to l_max = 20. 
+ - on a grid spacing of M/4, in the r* domain (-20, 100) up to l_max = 20. 
  - on a grid of spacing M/8, in the range r* \in (-30, 250) up to l_max = 30.
  - 
 The first set is quicker to work with. The first set starts at ZZZ=001, and the second set at ZZZ=021, like this:
@@ -100,17 +100,18 @@ Set 2:  M/8 spacing, (-30,250) domain, l_max = 30.
 60-060-022: a=0.6, m=2.
 99-060-022: a=0.99, m=2.
 
-*Calculation for m != 0 (radiative)*
+*Calculation for m != 0 (radiative modes)*
 
 The notebook for calculating m != 0 modes is:
 - metric_reconstruction_calc_radiative.nb
+- 
 Sections 1 to 4 of the calculation are necessary setup. These sections should run in circa 10 minutes, depending on the parameters in "config".
 
 Sections A and B calculate the MP components on a grid. Sections A and B typically take longer to run, depending on the grid parameters. You may choose to run either A or B, instead of both. Now that it is working efficiently, I think that A is the better approach to use. The command-line script only runs part A. 
 
 The output of Section A (1D grid) are functions of r only, for the 10 components projected onto spin-weighted spherical harmonics. The output of Section B (2D grid) are functions of (r,\[Theta]) for the 10 components. 
 
-*Calculation for m = 0 (static)*
+*Calculation for m = 0 (static modes)*
 
 For the static sector, use metric_reconstruction_calc_static.nb, after first running the three "Calc" notebooks for initial setup.
 Sections 1 to 6 are necessary to produce output. The later sections are legacy code, used at some point for testing (and I can’t guarantee they will run).
