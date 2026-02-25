@@ -33,7 +33,7 @@ Off[Power::infy];
 Off[FrontEndObject::notavail];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Definitions*)
 
 
@@ -195,7 +195,7 @@ Pp2lrepl=Table[Pp2repl/.awsubs/.HeadFn[Pm2,ll]/.HeadFn[Pp2,ll]/.Crepl0/.AArepl/.
 Pp1lrepl=Table[Pp1repl/.awsubs/.HeadFn[Pm1,ll]/.HeadFn[Pp1,ll]/.BBrepl/.{\[Lambda]->eigs1[[ll+1]]}/.awsubs,{ll,lmins1,lmax}]//Flatten;
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Helper Functions*)
 
 
@@ -312,9 +312,9 @@ M2
 MetricReconstructRadiative[iConfig_,primarypath_]:=Module[{r,\[Lambda],l,\[CapitalOmega]0},
 
 Print["1. Preliminaries."];
-
 directory=(primarypath<>"/data"<>extractUpToSecondLastHyphen[ToString[iConfig]]<>"/data"<>extractUpToLastHyphen[ToString[iConfig]]<>"/");
 If[!DirectoryQ[directory], CreateDirectory[directory, CreateIntermediateDirectories -> True]];
+
 
 filepath=directory<>"config/";
 filen=filepath<>"config"<>ToString[iConfig]<>".txt";
@@ -322,6 +322,7 @@ s=Import[filen,"String"];
 s1=StringSplit[s,"\n"];
 s2=Map[StringSplit[#,"\t"]&,s1];
 configparams=Map[{#[[1]],ToExpression[#[[2]]]}&,s2];
+
 
 GetParam[key_,default_]:=If[GetParam[key]===Null,default,GetParam[key]];
 
@@ -337,6 +338,7 @@ lplot=GetParam["lplot"];
 nterms=GetParam["nterms"];(* Number of terms in the spherical expansion. *)
 {a0,r0,mm,lmax,lplot,nterms};
 
+
 (* IMPORTANT: Be cautious of using Simplify after introducing the numerical values, as this can lead to huge loss of precision. All Simplify statements must come before replacing symbols numerical values. *)
 \[CapitalOmega]0=1/(Sqrt[r0^3]+a0);
 \[Omega]0=mm*\[CapitalOmega]0;
@@ -348,6 +350,7 @@ lmins1=Max[1,Abs[mm]];
 lmins2=Max[2,Abs[mm]];
 lmins={lmins2,lmins1,lmins0,lmins1,lmins2};
 rprmvals={rp->1+Sqrt[1-a^2],rm->1-Sqrt[1-a^2]}/.awsubs;
+
 
 (* To handle the \[Kappa] functions, satisfying equations sourced by the radial profile of the trace, I have written some bespoke code (!) *)
 \[Kappa]ord=GetParam["kapord",6]; (* \[Kappa]ord is the maximum order of series expansion of \[Kappa] in spheroidal harmonics. *)
