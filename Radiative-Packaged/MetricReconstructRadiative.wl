@@ -9,7 +9,8 @@ BeginPackage["MetricReconstructRadiative`",
 "OrbitalData`",
 "KerrOrbitalParameters`",
 "SWSHdecomp`",
-"SpinWeightedSpheroidalHarmonicsFT`"
+"SpinWeightedSpheroidalHarmonicsFT`",
+"NGrid`"
 }];
 Needs["SpinWeightedSpheroidalHarmonics`"]
 Needs["Teukolsky`"]
@@ -49,6 +50,13 @@ Off[FrontEndObject::notavail];
 Get\[CapitalLambda][l_,m_,a\[Omega]_]:=Module[{AA},
 SpinWeightedSpheroidalEigenvalue[-2,l,m,a\[Omega]]
 ]; (* N.B. s = -2. *)
+
+
+EchoT[lbl_][expr_]:=EchoTiming[expr,lbl]
+
+
+(* ::Subsection:: *)
+(*Teukolsky Equation stuff*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -782,7 +790,237 @@ MRProjector[2,"l+m-"][a,m,\[Omega],lmax,r,Pvecs,{Bmatm2,Bmatp2}],
 MRProjector[2,"l-m+"][a,m,\[Omega],lmax,r,Pvecs,{Bmatm2,Bmatp2}],
 MRProjector[2,"l-m-"][a,m,\[Omega],lmax,r,Pvecs,{Bmatm2,Bmatp2}],
 
-MRProjector[2,"l+l-"][a,m,\[Omega],lmax,r,Pvecs,{Pp2vec,Pm2vec},{Bmatm2,Bmatp2}]
+MRProjector[2,"l+l-"][a,m,\[Omega],lmax,r,Pvecs,{Pp2vec,Pm2vec},{Bmatm2,Bmatp2}],
+
+0 Pp2vec[[All,1]]
+}
+]
+];
+
+
+(* ::Subsection::Closed:: *)
+(*Spin 0 calculation*)
+
+
+h\[Kappa]MixingMatrix[a_,m_,\[Omega]_,lmax_,{\[Gamma]mat_,eigs0_}]:=Module[{},
+a^2*Table[
+If[j!=k,
+If[j>=Abs[m]&&k>=Abs[m],
+\[Gamma]mat[[j+1,k+1]]/(2*(eigs0[[j+1]]-eigs0[[k+1]]))
+,
+0
+]
+,
+0
+]
+,{j,0,lmax},{k,0,lmax}]
+];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Spin 0 derivatives*)
+
+
+DoprDop0[a_,m_,\[Omega]_,r_]:=Function[{h0,h1,h2},Evaluate[
+h2 r+(h1 (a^2-2 r+2 I a m r+r^2-2 I a^2 r \[Omega]-2 I r^3 \[Omega]))/(a^2-2 r+r^2)-(h0 (-I a^3 m+a^2 m^2 r+I a m r^2+I a^4 \[Omega]-2 a^3 m r \[Omega]+2 I a^2 r^2 \[Omega]-4 I r^3 \[Omega]-2 a m r^3 \[Omega]+I r^4 \[Omega]+a^4 r \[Omega]^2+2 a^2 r^3 \[Omega]^2+r^5 \[Omega]^2))/(a^2-2 r+r^2)^2
+]
+]
+
+
+DdagrDdag0[a_,m_,\[Omega]_,r_]:=Function[{h0,h1,h2},Evaluate[
+h2 r+(h1 (a^2-2 r-2 I a m r+r^2+2 I a^2 r \[Omega]+2 I r^3 \[Omega]))/(a^2-2 r+r^2)-(h0 (I a^3 m+a^2 m^2 r-I a m r^2-I a^4 \[Omega]-2 a^3 m r \[Omega]-2 I a^2 r^2 \[Omega]+4 I r^3 \[Omega]-2 a m r^3 \[Omega]-I r^4 \[Omega]+a^4 r \[Omega]^2+2 a^2 r^3 \[Omega]^2+r^5 \[Omega]^2))/(a^2-2 r+r^2)^2
+]
+]
+
+
+DopDop0[a_,m_,\[Omega]_,r_]:=Function[{h0,h1,h2},Evaluate[
+h2-(2 I h1 (-a m+a^2 \[Omega]+r^2 \[Omega]))/(a^2-2 r+r^2)-(h0 (-2 I a m+a^2 m^2+2 I a m r+2 I a^2 \[Omega]-2 a^3 m \[Omega]-2 I r^2 \[Omega]-2 a m r^2 \[Omega]+a^4 \[Omega]^2+2 a^2 r^2 \[Omega]^2+r^4 \[Omega]^2))/(a^2-2 r+r^2)^2
+]
+]
+
+
+DdagDdag0[a_,m_,\[Omega]_,r_]:=Function[{h0,h1,h2},Evaluate[
+h2+(2 I h1 (-a m+a^2 \[Omega]+r^2 \[Omega]))/(a^2-2 r+r^2)-(h0 (2 I a m+a^2 m^2-2 I a m r-2 I a^2 \[Omega]-2 a^3 m \[Omega]+2 I r^2 \[Omega]-2 a m r^2 \[Omega]+a^4 \[Omega]^2+2 a^2 r^2 \[Omega]^2+r^4 \[Omega]^2))/(a^2-2 r+r^2)^2
+]
+]
+
+
+Dop0[a_,m_,\[Omega]_,r_]:=Function[{h0,h1,h2},Evaluate[
+h1-(I h0 (-a m+a^2 \[Omega]+r^2 \[Omega]))/(a^2-2 r+r^2)
+]
+]
+
+
+Ddag0[a_,m_,\[Omega]_,r_]:=Function[{h0,h1,h2},Evaluate[
+h1+(I h0 (-a m+a^2 \[Omega]+r^2 \[Omega]))/(a^2-2 r+r^2)
+]
+]
+
+
+d\[CapitalDelta]d0[a_,m_,\[Omega]_,r_]:=Function[{h0,h1,h2},Evaluate[
+4 h1 (-1+r)+2 h2 (a^2-2 r+r^2)+(2 h0 (-a m+a^2 \[Omega]+r^2 \[Omega])^2)/(a^2-2 r+r^2)
+]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Spin 0 MRProjectors*)
+
+
+(* ::Input::Initialization:: *)
+MRProjector[0,"l+l+"][a_,m_,\[Omega]_,lmax_,r_,{hvec_,\[Kappa]mat_,DoprDoph_,DdagrDdagh_,DopDop\[Kappa]_,DdagDdag\[Kappa]_,Dhvec_,D\[Kappa]mat_,Ddaghvec_,Ddag\[Kappa]mat_,dd2\[Kappa]mat_,d\[Kappa]mat_},{ Bmat0_}]:=Module[
+{
+tmp1,tmp2
+},
+tmp1=-1/(I*\[Omega])*DoprDoph . Bmat0;
+tmp2=-4*DopDop\[Kappa] . Bmat0;
+Return[tmp1+tmp2];
+]
+
+
+(* ::Input::Initialization:: *)
+MRProjector[0,"l-l-"][a_,m_,\[Omega]_,lmax_,r_,{hvec_,\[Kappa]mat_,DoprDoph_,DdagrDdagh_,DopDop\[Kappa]_,DdagDdag\[Kappa]_,Dhvec_,D\[Kappa]mat_,Ddaghvec_,Ddag\[Kappa]mat_,dd2\[Kappa]mat_,d\[Kappa]mat_},{ Bmat0_}]:=Module[
+{
+tmp1,tmp2
+},
+tmp1=1/(I*\[Omega])*DdagrDdagh . Bmat0;
+tmp2=-4*DdagDdag\[Kappa] . Bmat0;
+Return[tmp1+tmp2];
+]
+
+
+(* ::Input::Initialization:: *)
+MRProjector[0,"m+m+"][a_,m_,\[Omega]_,lmax_,r_,{hvec_,\[Kappa]mat_,DoprDoph_,DdagrDdagh_,DopDop\[Kappa]_,DdagDdag\[Kappa]_,Dhvec_,D\[Kappa]mat_,Ddaghvec_,Ddag\[Kappa]mat_,dd2\[Kappa]mat_,d\[Kappa]mat_},{ Bmat0_}]:=Module[
+{
+ t0,t1,tmpSh1,tmpS\[Kappa]1
+},
+t0=Bmat0 . (\[CapitalLambda]hat[lmax,m]-2*a \[Omega]*\[Lambda]hat[lmax,m] . SinMixMatrix[1,2,lmax,m]+(a \[Omega])^2*SinMixMatrix[0,2,lmax,m]) . CosMixMatrix[2,1,lmax,m];t1=Bmat0 . (\[Lambda]hat[lmax,m] . SinMixMatrix[1,2,lmax,m]-a \[Omega]*SinMixMatrix[0,2,lmax,m]);tmpSh1=(t0+t1);
+tmpS\[Kappa]1=Bmat0 . (\[CapitalLambda]hat[lmax,m]-2*a \[Omega]*\[Lambda]hat[lmax,m] . SinMixMatrix[1,2,lmax,m]+(a \[Omega])^2*SinMixMatrix[0,2,lmax,m]);
+Return[(a/\[Omega])*hvec . tmpSh1-4*\[Kappa]mat . tmpS\[Kappa]1]
+]
+
+
+(* ::Input::Initialization:: *)
+MRProjector[0,"m-m-"][a_,m_,\[Omega]_,lmax_,r_,{hvec_,\[Kappa]mat_,DoprDoph_,DdagrDdagh_,DopDop\[Kappa]_,DdagDdag\[Kappa]_,Dhvec_,D\[Kappa]mat_,Ddaghvec_,Ddag\[Kappa]mat_,dd2\[Kappa]mat_,d\[Kappa]mat_},{ Bmat0_}]:=Module[
+{
+ t0,t1,tmpSh2,tmpS\[Kappa]2
+},
+t0=Bmat0 . (\[CapitalLambda]hat[lmax,m]-2*a \[Omega]*\[Lambda]hat[lmax,m] . SinMixMatrix[-1,-2,lmax,m]+(a \[Omega])^2*SinMixMatrix[0,-2,lmax,m]) . CosMixMatrix[-2,1,lmax,m];t1=-Bmat0 . (\[Lambda]hat[lmax,m] . SinMixMatrix[-1,-2,lmax,m]-a \[Omega]*SinMixMatrix[0,-2,lmax,m]);tmpSh2=(t0+t1);
+tmpS\[Kappa]2=Bmat0 . (\[CapitalLambda]hat[lmax,m]-2*a \[Omega]*\[Lambda]hat[ lmax,m] . SinMixMatrix[-1,-2,lmax,m]+(a \[Omega])^2*SinMixMatrix[0,-2,lmax,m]);
+Return[-(a/\[Omega])*hvec . tmpSh2-4* \[Kappa]mat . tmpS\[Kappa]2]
+]
+
+
+(* ::Input::Initialization:: *)
+MRProjector[0,"l+m+"][a_,m_,\[Omega]_,lmax_,r_,{hvec_,\[Kappa]mat_,DoprDoph_,DdagrDdagh_,DopDop\[Kappa]_,DdagDdag\[Kappa]_,Dhvec_,D\[Kappa]mat_,Ddaghvec_,Ddag\[Kappa]mat_,dd2\[Kappa]mat_,d\[Kappa]mat_},{ Bmat0_}]:=Module[
+{
+t0,sinmix,cosmix,\[CapitalSigma]mat,MM0,tmp,term1,term2, term3, term4
+},
+t0=(r^2*idmat[lmax,m]+a^2*CosMixMatrix[1,2,lmax,m]);
+sinmix=SinMixMatrix[0,1,lmax,m];
+cosmix=CosMixMatrix[1,1,lmax,m];
+MM0=(\[Lambda]hat[lmax,m]-a*\[Omega]*sinmix);
+term1=1/(2*I*\[Omega])*Dhvec . Bmat0 . MM0 . t0;
+term2=-a/\[Omega]*(r*Dhvec . Bmat0 . sinmix-hvec . Bmat0 . MM0 . cosmix);
+tmp=(r*idmat[lmax,m]+I*a*cosmix);
+term3=4*D\[Kappa]mat . Bmat0 . MM0 . tmp;
+term4=-4*( \[Kappa]mat . Bmat0 . MM0+I*a*D\[Kappa]mat . Bmat0 . sinmix);
+Return[term1+term2+term3+term4];
+]
+
+
+(* ::Input::Initialization:: *)
+MRProjector[0,"l+m-"][a_,m_,\[Omega]_,lmax_,r_,{hvec_,\[Kappa]mat_,DoprDoph_,DdagrDdagh_,DopDop\[Kappa]_,DdagDdag\[Kappa]_,Dhvec_,D\[Kappa]mat_,Ddaghvec_,Ddag\[Kappa]mat_,dd2\[Kappa]mat_,d\[Kappa]mat_},{ Bmat0_}]:=Module[
+{
+t0,sinmix,cosmix,\[CapitalSigma]mat,MM0,tmp,term1,term2, term3, term4
+},
+t0=(r^2*idmat[lmax,m]+a^2*CosMixMatrix[-1,2,lmax,m]);
+sinmix=SinMixMatrix[0,-1,lmax,m];
+cosmix=CosMixMatrix[-1,1,lmax,m];
+MM0=(\[Lambda]hat[lmax,m]-a*\[Omega]*sinmix);
+term1=-1/(2*I*\[Omega])*Dhvec . Bmat0 . MM0 . t0;
+term2=a/\[Omega]*(r*Dhvec . Bmat0 . sinmix+hvec . Bmat0 . MM0 . cosmix);tmp=(r*idmat[lmax,m]-I*a*cosmix);term3=-4*(D\[Kappa]mat . Bmat0 . MM0 . tmp);term4=4*(\[Kappa]mat . Bmat0 . MM0+I*a*D\[Kappa]mat . Bmat0 . sinmix);Return[term1+term2+term3+term4];
+]
+
+
+(* ::Input::Initialization:: *)
+MRProjector[0,"l-m+"][a_,m_,\[Omega]_,lmax_,r_,{hvec_,\[Kappa]mat_,DoprDoph_,DdagrDdagh_,DopDop\[Kappa]_,DdagDdag\[Kappa]_,Dhvec_,D\[Kappa]mat_,Ddaghvec_,Ddag\[Kappa]mat_,dd2\[Kappa]mat_,d\[Kappa]mat_},{ Bmat0_}]:=Module[
+{
+t0,sinmix,cosmix,\[CapitalSigma]mat,MM0,tmp,term1,term2, term3, term4
+},
+t0=r^2*idmat[lmax,m]+a^2*CosMixMatrix[1,2,lmax,m];
+sinmix=SinMixMatrix[0,1,lmax,m];
+cosmix=CosMixMatrix[1,1,lmax,m];
+MM0=(\[Lambda]hat[lmax,m]-a*\[Omega]*sinmix);
+
+term1=-1/(2*I*\[Omega])*Ddaghvec . Bmat0 . MM0 . t0;term2=-a/\[Omega]*(r*Ddaghvec . Bmat0 . sinmix-hvec . Bmat0 . MM0 . cosmix);tmp=(r*idmat[lmax,m]-I*a*cosmix);term3=4*( Ddag\[Kappa]mat . Bmat0 . MM0 . tmp);term4=-4*(\[Kappa]mat . Bmat0 . MM0-I*a* Ddag\[Kappa]mat . Bmat0 . sinmix);Return[term1+term2+term3+term4];
+]
+
+
+(* ::Input::Initialization:: *)
+MRProjector[0,"l-m-"][a_,m_,\[Omega]_,lmax_,r_,{hvec_,\[Kappa]mat_,DoprDoph_,DdagrDdagh_,DopDop\[Kappa]_,DdagDdag\[Kappa]_,Dhvec_,D\[Kappa]mat_,Ddaghvec_,Ddag\[Kappa]mat_,dd2\[Kappa]mat_,d\[Kappa]mat_},{ Bmat0_}]:=Module[
+{
+t0,sinmix,cosmix,\[CapitalSigma]mat,MM0,tmp,term1,term2, term3, term4
+},
+t0=(r^2*idmat[lmax,m]+a^2*CosMixMatrix[-1,2,lmax,m]);
+sinmix=SinMixMatrix[0,-1,lmax,m];
+cosmix=CosMixMatrix[-1,1,lmax,m];
+MM0=(\[Lambda]hat[lmax,m]-a*\[Omega]*sinmix);
+
+term1=1/(2*I*\[Omega])*Ddaghvec . Bmat0 . MM0 . t0;
+term2=a/\[Omega]*(r*Ddaghvec . Bmat0 . sinmix+hvec . Bmat0 . MM0 . cosmix);tmp=(r*idmat[lmax,m]+I*a*cosmix);term3=-4*( Ddag\[Kappa]mat . Bmat0 . MM0 . tmp);term4=4*( \[Kappa]mat . Bmat0 . MM0-I*a*Ddag\[Kappa]mat . Bmat0 . sinmix);
+Return[term1+term2+term3+term4]
+]
+
+
+(* ::Input::Initialization:: *)
+MRProjector[0,"l+l-"][a_,m_,\[Omega]_,lmax_,r_,{hvec_,\[Kappa]mat_,DoprDoph_,DdagrDdagh_,DopDop\[Kappa]_,DdagDdag\[Kappa]_,Dhvec_,D\[Kappa]mat_,Ddaghvec_,Ddag\[Kappa]mat_,dd2\[Kappa]mat_,d\[Kappa]mat_},{ Bmat0_}]:=Module[
+{
+cosmix,\[CapitalSigma]mat,tmp1,tmp2,tmp3,term1,term2, term3, term4
+},
+cosmix=CosMixMatrix[0,1,lmax,m];
+\[CapitalSigma]mat=(r^2*idmat[lmax,m]+a^2*CosMixMatrix[0,2,lmax,m]);tmp3=\[Lambda]hat[lmax,m] . (SinMixMatrix[-1,0,lmax,m]-SinMixMatrix[1,0,lmax,m]);term1=-hvec . Bmat0 . (((\[Omega]*(r^2+a^2)-a*m)/\[Omega])*idmat[lmax,m]-2*\[CapitalSigma]mat) . \[CapitalSigma]mat;term2=-2*dd2\[Kappa]mat . Bmat0 . \[CapitalSigma]mat;term3=8*r*(a^2-2 r+r^2)*d\[Kappa]mat . Bmat0;term4=4*a^2*\[Kappa]mat . Bmat0 . tmp3 . cosmix;Return[(term1+term2+term3+term4)]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CalculateSpin0Contributions*)
+
+
+CalculateSpin0Contributions[a_,m_,\[Omega]_,lmax_,r_,{hvec_,\[Kappa]vec_},{Bmat0_,\[Gamma]mat_,eigs0_}]:=Module[{
+Pvecs,A},
+A=h\[Kappa]MixingMatrix[a,m,\[Omega],lmax,{\[Gamma]mat,eigs0}];
+Pvecs={
+hvec[[All,1]],
+\[Kappa]vec[[All,1]]+hvec[[All,1]] . A,
+
+DoprDop0[a,m,\[Omega],r]@@@hvec,
+DdagrDdag0[a,m,\[Omega],r]@@@hvec,
+DopDop0[a,m,\[Omega],r]@@@\[Kappa]vec +(DopDop0[a,m,\[Omega],r]@@@hvec) . A,
+DdagDdag0[a,m,\[Omega],r]@@@\[Kappa]vec +(DdagDdag0[a,m,\[Omega],r]@@@hvec) . A,
+
+Dop0[a,m,\[Omega],r]@@@hvec,
+Dop0[a,m,\[Omega],r]@@@\[Kappa]vec+(Dop0[a,m,\[Omega],r]@@@hvec) . A,
+Ddag0[a,m,\[Omega],r]@@@hvec,
+Ddag0[a,m,\[Omega],r]@@@\[Kappa]vec+(Ddag0[a,m,\[Omega],r]@@@hvec) . A,
+
+d\[CapitalDelta]d0[a,m,\[Omega],r]@@@\[Kappa]vec+(d\[CapitalDelta]d0[a,m,\[Omega],r]@@@hvec) . A,
+\[Kappa]vec[[All,2]]+hvec[[All,2]] . A
+};
+Return[
+{
+MRProjector[0,"l+l+"][a,m,\[Omega],lmax,r,Pvecs,{Bmat0}],
+MRProjector[0,"l-l-"][a,m,\[Omega],lmax,r,Pvecs,{Bmat0}],
+MRProjector[0,"m+m+"][a,m,\[Omega],lmax,r,Pvecs,{Bmat0}],
+MRProjector[0,"m-m-"][a,m,\[Omega],lmax,r,Pvecs,{Bmat0}],
+
+MRProjector[0,"l+m+"][a,m,\[Omega],lmax,r,Pvecs,{Bmat0}],
+MRProjector[0,"l+m-"][a,m,\[Omega],lmax,r,Pvecs,{Bmat0}],
+MRProjector[0,"l-m+"][a,m,\[Omega],lmax,r,Pvecs,{Bmat0}],
+MRProjector[0,"l-m-"][a,m,\[Omega],lmax,r,Pvecs,{Bmat0}],
+
+MRProjector[0,"l+l-"][a,m,\[Omega],lmax,r,Pvecs,{Bmat0}],
+hvec[[All,1]]
 }
 ]
 ];
@@ -2109,300 +2347,80 @@ term3=2*a^2*calPs1 . (Bmatm1 . s1sinm10 -signmat . Bmatp1 . s1sin10) . cosmix;
 ];
 
 
-(*  Calcs2components  *)
-idmat=DiagonalMatrix[Table[If[ll>=lmins0,1,0],{ll,0,lmax}]];
-t0=Bmatp2 . (\[CapitalLambda]hat-2*a\[Omega]0*\[Lambda]2hat . SinMixMatrix[1,0,lmax,mm]+a\[Omega]0^2*SinMixMatrix[2,0,lmax,mm]);
-t1=signmat . Bmatm2 . (\[CapitalLambda]hat-2*a\[Omega]0*\[Lambda]2hat . SinMixMatrix[-1,0,lmax,mm]+a\[Omega]0^2*SinMixMatrix[-2,0,lmax,mm]);
-Ss2lplp=(t0+t1)/.awsubs;
-Ss2lmlm=signmat . Ss2lplp/.awsubs; 
-Ss2mpmp=Bmatp2/.awsubs;
-Ss2mmmm=signmat . Bmatm2/.awsubs;
-SSplus=(Bmatp2 . (\[CapitalLambda]hat-2*a*\[Omega]*\[Lambda]2hat . SinMixMatrix[1,0,lmax,mm]+a^2*\[Omega]^2*SinMixMatrix[2,0,lmax,mm]))/.awsubs;
-SSminus=(Bmatm2 . (\[CapitalLambda]hat-2*a*\[Omega]*\[Lambda]2hat . SinMixMatrix[-1,0,lmax,mm]+a^2*\[Omega]^2*SinMixMatrix[-2,0,lmax,mm]))/.awsubs;
-
-(* Attach an a-prefix before they have been evaluated numerically. *)
-aPp2vec=Pp2vec/.\[CapitalDelta]Ksimp;
-aPm2vec=Pm2vec/.\[CapitalDelta]Ksimp;
-aDdagPp2vec=Map[Ddag,aPp2vec]/.\[CapitalDelta]Ksimp;
-aDdagDdagPp2vec=Map[Ddag,aDdagPp2vec]/.\[CapitalDelta]Ksimp;
-aDdagDdagDdagPp2vec=Map[Ddag,aDdagDdagPp2vec]/.\[CapitalDelta]Ksimp;
-aDPm2vec=Map[Dop,aPm2vec]/.\[CapitalDelta]Ksimp;
-aDDPm2vec=Map[Dop,aDPm2vec]/.\[CapitalDelta]Ksimp;
-aDDDPm2vec=Map[Dop,aDDPm2vec]/.\[CapitalDelta]Ksimp;
-aDopDdagDdagPp2vec=Map[Dop,aDdagDdagPp2vec]/.\[CapitalDelta]Ksimp;
-aDdagDDPm2vec=Map[Ddag,aDDPm2vec]/.\[CapitalDelta]Ksimp;
-alplmterm1A=Map[Dop,\[CapitalDelta][r]*Map[Ddag,aDDPm2vec]]+Map[Ddag,\[CapitalDelta][r]*Map[Dop,aDDPm2vec]];
-alplmterm1B=Map[D[#,r]&,aDDPm2vec];
-alplmterm2A=Map[Dop,\[CapitalDelta][r]*Map[Ddag,aDdagDdagPp2vec]]+Map[Ddag,\[CapitalDelta][r]*Map[Dop,aDdagDdagPp2vec]];
-alplmterm2B=Map[D[#,r]&,aDdagDdagPp2vec];
-Clear[cosmix,sinmix];
-sinp1=SinMixMatrix[0,1,lmax,mm];
-sinm1=SinMixMatrix[0,-1,lmax,mm];
-sinmix1m1a=SinMixMatrix[-1,1,lmax,mm];
-sinmix1m1b=SinMixMatrix[1,-1,lmax,mm];
-\[Rho]mat1=r*idmat+I*a*CosMixMatrix[1,1,lmax,mm];  (* These should be used for the first two components: l+m+ and l+m- *)
-\[Rho]cmat1=r*idmat-I*a*CosMixMatrix[-1,1,lmax,mm];
-\[Rho]cmat2=r*idmat-I*a*CosMixMatrix[1,1,lmax,mm]; (* These should be used for the second components: l-m+ and l-m- *)
-\[Rho]mat2=r*idmat+I*a*CosMixMatrix[-1,1,lmax,mm];
-cosmix01=CosMixMatrix[0,1,lmax,mm];
-cosmix02=CosMixMatrix[0,2,lmax,mm];
-\[Rho]cmat3=r*idmat-I*a*cosmix01;  (* These should be used for l+l- *) 
-\[Rho]mat3=r*idmat+I*a*cosmix01;
-\[CapitalSigma]mat=r^2*idmat+a^2*cosmix02;
-sinp10=SinMixMatrix[1,0,lmax,mm];
-sinm10=SinMixMatrix[-1,0,lmax,mm];
-MMp2=Bmatp2 . (\[Lambda]2hat-a*\[Omega]*SinMixMatrix[2,1,lmax,mm]);
-MMm2=Bmatm2 . (\[Lambda]2hat-a*\[Omega]*SinMixMatrix[-2,-1,lmax,mm]);
-
-Calcs2components[rtry_?NumericQ]:=Module[{
-tmp,tmp1,tmp2,tmp3,term1,term2,term3,term4,\[CapitalDelta]Ktbl,myP2subs,
-\[Rho]mat,\[Rho]cmat,sinmix,sinmix1m1,
-Pp2vec,Pm2vec,DdagPp2vec,
-DdagDdagPp2vec,
-DdagDdagDdagPp2vec,
-DPm2vec,
-DDPm2vec,
-DDDPm2vec,
-DopDdagDdagPp2vec,
-DdagDDPm2vec,lplmterm1A,lplmterm1B,lplmterm2A,lplmterm2B,
-hraws2lplp,hraws2lmlm,hraws2mpmp,hraws2mmmm,
-\[Rho]hraws2lpmp,\[Rho]chraws2lpmm,\[Rho]chraws2lmmp,\[Rho]hraws2lmmm,\[CapitalSigma]\[CapitalDelta]hraws2lplm},
-\[CapitalDelta]Ktbl=EvaluateRHS[\[CapitalDelta]Ksubs,rtry]/.awsubs;
-myP2subs=GetPsubsAll[2,rtry];
-
-{Pp2vec,Pm2vec,DdagPp2vec,
-DdagDdagPp2vec,
-DdagDdagDdagPp2vec,
-DPm2vec,
-DDPm2vec,
-DDDPm2vec,
-DopDdagDdagPp2vec,
-DdagDDPm2vec}={aPp2vec,aPm2vec,aDdagPp2vec,
-aDdagDdagPp2vec,
-aDdagDdagDdagPp2vec,
-aDPm2vec,
-aDDPm2vec,
-aDDDPm2vec,
-aDopDdagDdagPp2vec,
-aDdagDDPm2vec}/.\[CapitalDelta]Ktbl/.awsubs/.myP2subs/.{r->rtry};
-
-{lplmterm1A,lplmterm1B,lplmterm2A,lplmterm2B}={alplmterm1A,alplmterm1B,alplmterm2A,alplmterm2B}/.\[CapitalDelta]Ktbl/.awsubs/.myP2subs/.{r->rtry};
-
-(* l+ l+,  l- l- *)
-hraws2lplp=-1/(6*\[Omega]^2*\[CapitalDelta][r]^2)*Pp2vec . Ss2lplp/.\[CapitalDelta]Ktbl/.awsubs/.{r->rtry};
-hraws2lmlm=-1/(6*\[Omega]^2*\[CapitalDelta][r]^2)*Pm2vec . Ss2lmlm/.\[CapitalDelta]Ktbl/.awsubs/.{r->rtry};
-
-(* m+ m+,  m- m- *)
-tmp=-1/(6*\[Omega]^2)*(DdagDdagPp2vec+signmat . DDPm2vec);
-hraws2mpmp=tmp . Ss2mpmp/.\[CapitalDelta]Ktbl/.awsubs/.{r->rtry};
-hraws2mmmm=tmp . Ss2mmmm/.\[CapitalDelta]Ktbl/.awsubs/.{r->rtry};
-
-(* l+ m+ *)
-sinmix=sinp1;
-sinmix1m1=sinmix1m1a;
-\[Rho]mat=\[Rho]mat1/.{r->rtry}/.awsubs;
-term1=1/(12*\[Omega]^2)*(DDPm2vec . signmat . SSplus-DdagDdagPp2vec . signmat . SSminus) . (\[Lambda]hat-a*\[Omega]*sinmix)/.awsubs;
-term2=-1/(12*\[Omega]^2)*(DDDPm2vec . signmat . SSplus-DopDdagDdagPp2vec . signmat . SSminus) . ((\[Lambda]hat-a*\[Omega]*sinmix) . \[Rho]mat-I*a*sinmix)/.awsubs;
-term3=-1/(3*I*\[Omega])*(DDDPm2vec . signmat . MMp2 . \[Rho]mat . \[Rho]mat-2*DDPm2vec . signmat . MMp2 . \[Rho]mat+2*DPm2vec . signmat . MMp2)/.awsubs;
-tmp=(\[Lambda]hat . \[Lambda]hat-2*a*\[Omega]*\[Lambda]hat . sinmix+a^2*\[Omega]^2*sinmix1m1) . \[Rho]mat . \[Rho]mat-2*I*a*(\[Lambda]hat . sinmix-a*\[Omega]*sinmix1m1) . \[Rho]mat-2*a^2*sinmix1m1/.awsubs;
-term4=-1/(3*I*\[Omega]*\[CapitalDelta][r])*DdagPp2vec . (signmat . MMm2 . tmp)/.awsubs;
-(* term4=-1/(3*I*\[Omega]*\[CapitalDelta][r])*DdagPp2vec.s2lpmpM1;*)
-tmp=term1+term2+term3+term4;
-\[Rho]hraws2lpmp=(tmp/(-6*I*M*\[Omega]))/.\[CapitalDelta]Ktbl/.awsubs/.{r->rtry};
-
-(* l+ m- *)
-sinmix=sinm1;
-sinmix1m1=sinmix1m1b;
-\[Rho]cmat=\[Rho]cmat1/.{r->rtry}/.awsubs;
-term1=-1/(12*\[Omega]^2)*(DDPm2vec . SSminus-DdagDdagPp2vec . SSplus) . (\[Lambda]hat-a*\[Omega]*sinmix)/.awsubs;
-term2=1/(12*\[Omega]^2)*(DDDPm2vec . SSminus-DopDdagDdagPp2vec . SSplus) . ((\[Lambda]hat-a*\[Omega]*sinmix) . \[Rho]cmat-I*a*sinmix)/.awsubs;
-term3=1/(3*I*\[Omega])*(DDDPm2vec . MMm2 . \[Rho]cmat . \[Rho]cmat-2*DDPm2vec . MMm2 . \[Rho]cmat+2*DPm2vec . MMm2)/.awsubs;
-tmp=((\[Lambda]hat . \[Lambda]hat-2*a*\[Omega]*\[Lambda]hat . sinmix+a^2*\[Omega]^2*sinmix1m1) . \[Rho]cmat . \[Rho]cmat-2*I*a*(\[Lambda]hat . sinmix-a*\[Omega]*sinmix1m1) . \[Rho]cmat-2*a^2*sinmix1m1)/.awsubs;
-term4=1/(3*I*\[Omega]*\[CapitalDelta][r])*DdagPp2vec . MMp2 . tmp/.awsubs;
-(*term4=1/(3*I*\[Omega]*\[CapitalDelta][r])*DdagPp2vec.s2lpmmM1/.awsubs;*)
-tmp=term1+term2+term3+term4;
-\[Rho]chraws2lpmm=(tmp/(-6*I*M*\[Omega]))/.\[CapitalDelta]Ktbl/.awsubs/.{r->rtry};
-
-(* l- m+ *)
-sinmix=sinp1;
-sinmix1m1=sinmix1m1a;
-\[Rho]cmat=\[Rho]cmat2/.{r->rtry}/.awsubs;
-term1=1/(12*\[Omega]^2)*(DDPm2vec . SSminus-DdagDdagPp2vec . SSplus) . (\[Lambda]hat-a*\[Omega]*sinmix)/.awsubs;
-term2=-1/(12*\[Omega]^2)*(DdagDDPm2vec . SSminus-DdagDdagDdagPp2vec . SSplus) . ((\[Lambda]hat-a*\[Omega]*sinmix) . \[Rho]cmat+I*a*sinmix)/.awsubs;
-term3=-1/(3*I*\[Omega])*(DdagDdagDdagPp2vec . MMp2 . \[Rho]cmat . \[Rho]cmat-2*DdagDdagPp2vec . MMp2 . \[Rho]cmat+2*DdagPp2vec . MMp2)/.awsubs;
-tmp=((\[Lambda]hat . \[Lambda]hat-2*a*\[Omega]*\[Lambda]hat . sinmix+a^2*\[Omega]^2*sinmix1m1) . \[Rho]cmat . \[Rho]cmat+2*I*a*(\[Lambda]hat . sinmix-a*\[Omega]*sinmix1m1) . \[Rho]cmat-2*a^2*sinmix1m1)/.awsubs;
-term4=-1/(3*I*\[Omega]*\[CapitalDelta][r])*DPm2vec . MMm2 . tmp/.awsubs;
-(*term4=-1/(3*I*\[Omega]*\[CapitalDelta][r])*DPm2vec.s2lmmpM1/.awsubs;*)
-tmp=term1+term2+term3+term4;
-\[Rho]chraws2lmmp=(tmp/(-6*I*M*\[Omega]))/.\[CapitalDelta]Ktbl/.awsubs/.{r->rtry};
-
-(* l- m- *)
-sinmix=sinm1;
-sinmix1m1=sinmix1m1b;
-\[Rho]mat=\[Rho]mat2/.{r->rtry}/.awsubs;
-term1=-1/(12*\[Omega]^2)*(DDPm2vec . signmat . SSplus-DdagDdagPp2vec . signmat . SSminus) . (\[Lambda]hat-a*\[Omega]*sinmix)/.awsubs;
-term2=1/(12*\[Omega]^2)*(DdagDDPm2vec . signmat . SSplus-DdagDdagDdagPp2vec . signmat . SSminus) . ((\[Lambda]hat-a*\[Omega]*sinmix) . \[Rho]mat+I*a*sinmix)/.awsubs;
-term3=1/(3*I*\[Omega])*(DdagDdagDdagPp2vec . signmat . MMm2 . \[Rho]mat . \[Rho]mat-2*DdagDdagPp2vec . signmat . MMm2 . \[Rho]mat+2*DdagPp2vec . signmat . MMm2)/.awsubs;
-tmp=((\[Lambda]hat . \[Lambda]hat-2*a*\[Omega]*\[Lambda]hat . sinmix+a^2*\[Omega]^2*sinmix1m1) . \[Rho]mat . \[Rho]mat+2*I*a*(\[Lambda]hat . sinmix-a*\[Omega]*sinmix1m1) . \[Rho]mat-2*a^2*sinmix1m1)/.awsubs;
-term4=1/(3*I*\[Omega]*\[CapitalDelta][r])*DPm2vec . (signmat . MMp2 . tmp)/.awsubs;
-(*term4=1/(3*I*\[Omega]*\[CapitalDelta][r])*DPm2vec.s2lmmmM1/.awsubs;*)
-tmp=term1+term2+term3+term4;
-\[Rho]hraws2lmmm=(tmp/(-6*I*M*\[Omega]))/.\[CapitalDelta]Ktbl/.awsubs/.{r->rtry};
-
-(* l+ l- *)
-\[Rho]mat=\[Rho]mat3/.{r->rtry}/.awsubs;
-\[Rho]cmat=\[Rho]cmat3/.{r->rtry}/.awsubs;
-tmp3=\[Lambda]hat . (sinm10-sinp10);
-term1=1/(24*\[Omega]^2)*(lplmterm1A . SSminus . \[CapitalSigma]mat-4*r*\[CapitalDelta][r]*lplmterm1B . SSminus-2*a^2*DDPm2vec . SSminus . tmp3 . cosmix01);
-term2=-1/(24*\[Omega]^2)*(lplmterm2A . SSplus . \[CapitalSigma]mat-4*r*\[CapitalDelta][r]*lplmterm2B . SSplus-2*a^2*DdagDdagPp2vec . SSplus . tmp3 . cosmix01);
-tmp=(2*a^2*r*cosmix01-I*a*(r^2*idmat+3*a^2*cosmix02));
-term3=1/(3*I*\[Omega])*(DDPm2vec . SSminus . \[CapitalSigma]mat . \[Rho]cmat-DPm2vec . SSminus . \[Rho]cmat . \[Rho]cmat
--DDPm2vec . MMm2 . sinm10 . tmp
--2*I*a*DPm2vec . MMm2 . sinm10 . \[Rho]mat);
-term4=1/(3*I*\[Omega])*(DdagDdagPp2vec . SSplus . \[CapitalSigma]mat . \[Rho]cmat-DdagPp2vec . SSplus . \[Rho]cmat . \[Rho]cmat
-+DdagDdagPp2vec . MMp2 . sinp10 . tmp
-+2*I*a*DdagPp2vec . MMp2 . sinp10 . \[Rho]mat);
-tmp=term1+term2+term3+term4;
-\[CapitalSigma]\[CapitalDelta]hraws2lplm=(tmp/(-6*I*M*\[Omega]))/.\[CapitalDelta]Ktbl/.awsubs/.{r->rtry};
-
-{hraws2lplp,hraws2lmlm,hraws2mpmp,hraws2mmmm,\[Rho]hraws2lpmp,\[Rho]chraws2lpmm,\[Rho]chraws2lmmp,\[Rho]hraws2lmmm,\[CapitalSigma]\[CapitalDelta]hraws2lplm}
-];
-
-
-(*  Calcs0components  *)
-Module[{t0,t1},
-t0=Bmat0 . (\[CapitalLambda]hat-2*a\[Omega]0*\[Lambda]hat . SinMixMatrix[1,2,lmax,mm]+a\[Omega]0^2*SinMixMatrix[0,2,lmax,mm]) . CosMixMatrix[2,1,lmax,mm];
-t1=Bmat0 . (\[Lambda]hat . SinMixMatrix[1,2,lmax,mm]-a\[Omega]0*SinMixMatrix[0,2,lmax,mm]);
-tmpSh1=(t0+t1)/.awsubs;
-];
-tmpS\[Kappa]1=Bmat0 . (\[CapitalLambda]hat-2*a\[Omega]0*\[Lambda]hat . SinMixMatrix[1,2,lmax,mm]+a\[Omega]0^2*SinMixMatrix[0,2,lmax,mm])/.awsubs;
-Module[{t0,t1},
-t0=Bmat0 . (\[CapitalLambda]hat-2*a\[Omega]0*\[Lambda]hat . SinMixMatrix[-1,-2,lmax,mm]+a\[Omega]0^2*SinMixMatrix[0,-2,lmax,mm]) . CosMixMatrix[-2,1,lmax,mm];
-t1=-Bmat0 . (\[Lambda]hat . SinMixMatrix[-1,-2,lmax,mm]-a\[Omega]0*SinMixMatrix[0,-2,lmax,mm]);
-tmpSh2=(t0+t1)/.awsubs;
-];
-tmpS\[Kappa]2=Bmat0 . (\[CapitalLambda]hat-2*a\[Omega]0*\[Lambda]hat . SinMixMatrix[-1,-2,lmax,mm]+a\[Omega]0^2*SinMixMatrix[0,-2,lmax,mm])/.awsubs;
-
-cosmix11=CosMixMatrix[1,1,lmax,mm];
-cosmixm11=CosMixMatrix[-1,1,lmax,mm];
-cosmix12=CosMixMatrix[1,2,lmax,mm];
-cosmixm12=CosMixMatrix[-1,2,lmax,mm];
-ahvector={hvec,\[Kappa]mat,Dop[r*Dop[hvec]],Ddag[r*Ddag[hvec]],Dop[Dop[\[Kappa]mat]],Ddag[Ddag[\[Kappa]mat]],Map[Dop,hvec],Map[Dop,\[Kappa]mat],Map[Ddag,hvec],Map[Ddag,\[Kappa]mat],Map[Dop,\[CapitalDelta][r]*Map[Ddag,\[Kappa]mat]]+Map[Ddag,\[CapitalDelta][r]*Map[Dop,\[Kappa]mat]],Map[D[#,r]&,\[Kappa]mat]}/.\[Kappa]lsubs/.hlsubs;
-(* This vector must match with the one in the function below. *)
-
-Calcs0components[rtry_?NumericQ]:=Module[{\[CapitalDelta]Ktbl,tmp,s0subs,\[CapitalSigma]mat,tmp1,tmp2,tmp3,term1,term2,term3,term4,t0,sinmix,cosmix,MM0,
-hvec,\[Kappa]mat,DoprDoph,DdagrDdagh,DopDop\[Kappa],DdagDdag\[Kappa],Dhvec,D\[Kappa]mat,Ddaghvec,Ddag\[Kappa]mat,dd2\[Kappa]mat,d\[Kappa]mat,
-hraws0lplp,hraws0lmlm,hraws0mpmp,hraws0mmmm,\[Rho]hraws0lpmp,\[Rho]chraws0lpmm,\[Rho]chraws0lmmp,\[Rho]hraws0lmmm,\[CapitalSigma]\[CapitalDelta]hraws0lplm},
-\[CapitalDelta]Ktbl=EvaluateRHS[\[CapitalDelta]Ksubs,rtry]/.awsubs;
-tmp=GetSpin0subs[rtry];
-s0subs=Join[tmp,\[Kappa]lsubs/.tmp];
-
-{hvec,\[Kappa]mat,DoprDoph,DdagrDdagh,DopDop\[Kappa],DdagDdag\[Kappa],Dhvec,D\[Kappa]mat,Ddaghvec,Ddag\[Kappa]mat,dd2\[Kappa]mat,d\[Kappa]mat}=ahvector/.\[Gamma]llsubs/.awsubs/.s0subs/.\[CapitalDelta]Ktbl/.{r->rtry};
-
-tmp1=-1/(I*\[Omega])*DoprDoph . Bmat0;
-tmp2=-4*(ones . DopDop\[Kappa]) . Bmat0;
-hraws0lplp=(tmp1+tmp2)/.awsubs;
-
-tmp1=1/(I*\[Omega])*DdagrDdagh . Bmat0;
-tmp2=-4*(ones . DdagDdag\[Kappa]) . Bmat0;
-hraws0lmlm=(tmp1+tmp2)/.awsubs;
-
-hraws0mpmp=((a/\[Omega])*hvec . tmpSh1-4*(ones . \[Kappa]mat) . tmpS\[Kappa]1)/.awsubs;
-hraws0mmmm=(-(a/\[Omega])*hvec . tmpSh2-4*(ones . \[Kappa]mat) . tmpS\[Kappa]2)/.awsubs;
-
-(* l+ m+ *)
-t0=(r^2*idmat+a^2*cosmix12)/.{r->rtry}/.awsubs;
-sinmix=sinp1;
-cosmix=cosmix11;
-MM0=(\[Lambda]hat-a*\[Omega]*sinmix)/.awsubs;
-term1=1/(2*I*\[Omega])*Dhvec . Bmat0 . MM0 . t0/.awsubs;
-term2=-a/\[Omega]*(r*Dhvec . Bmat0 . sinmix-hvec . Bmat0 . MM0 . cosmix)/.{r->rtry}/.awsubs;
-tmp=(r*idmat+I*a*cosmix)/.{r->rtry}/.awsubs;
-term3=4*(ones . D\[Kappa]mat) . Bmat0 . MM0 . tmp;
-term4=-4*((ones . \[Kappa]mat) . Bmat0 . MM0+I*a*(ones . D\[Kappa]mat) . Bmat0 . sinmix)/.awsubs;
-\[Rho]hraws0lpmp=(term1+term2+term3+term4)/.awsubs;
-
-(* l+ m- *)
-t0=(r^2*idmat+a^2*cosmixm12)/.{r->rtry}/.awsubs;
-sinmix=sinm1;
-cosmix=cosmixm11;
-MM0=(\[Lambda]hat-a*\[Omega]*sinmix)/.awsubs;
-term1=-1/(2*I*\[Omega])*Dhvec . Bmat0 . MM0 . t0/.awsubs;
-term2=a/\[Omega]*(r*Dhvec . Bmat0 . sinmix+hvec . Bmat0 . MM0 . cosmix)/.{r->rtry}/.awsubs;
-tmp=(r*idmat-I*a*cosmix)/.{r->rtry}/.awsubs;
-term3=-4*((ones . D\[Kappa]mat) . Bmat0 . MM0 . tmp);
-term4=4*((ones . \[Kappa]mat) . Bmat0 . MM0+I*a*(ones . D\[Kappa]mat) . Bmat0 . sinmix)/.awsubs;
-\[Rho]chraws0lpmm=(term1+term2+term3+term4)/.awsubs;
-
-(* l- m+ *)
-t0=(r^2*idmat+a^2*cosmix12)/.{r->rtry}/.awsubs;
-sinmix=sinp1;
-cosmix=cosmix11;
-MM0=(\[Lambda]hat-a*\[Omega]*sinmix)/.awsubs;
-term1=-1/(2*I*\[Omega])*Ddaghvec . Bmat0 . MM0 . t0/.awsubs;
-term2=-a/\[Omega]*(r*Ddaghvec . Bmat0 . sinmix-hvec . Bmat0 . MM0 . cosmix)/.{r->rtry}/.awsubs;
-tmp=(r*idmat-I*a*cosmix)/.{r->rtry}/.awsubs;
-term3=4*((ones . Ddag\[Kappa]mat) . Bmat0 . MM0 . tmp);
-term4=-4*((ones . \[Kappa]mat) . Bmat0 . MM0-I*a*(ones . Ddag\[Kappa]mat) . Bmat0 . sinmix)/.awsubs;
-\[Rho]chraws0lmmp=(term1+term2+term3+term4)/.awsubs;
-
-(* l- m- *)
-t0=(r^2*idmat+a^2*cosmixm12)/.{r->rtry}/.awsubs;
-sinmix=sinm1;
-cosmix=cosmixm11;
-MM0=(\[Lambda]hat-a*\[Omega]*sinmix)/.awsubs;
-term1=1/(2*I*\[Omega])*Ddaghvec . Bmat0 . MM0 . t0/.awsubs;
-term2=a/\[Omega]*(r*Ddaghvec . Bmat0 . sinmix+hvec . Bmat0 . MM0 . cosmix)/.{r->rtry}/.awsubs;
-tmp=(r*idmat+I*a*cosmix)/.{r->rtry}/.awsubs;
-term3=-4*((ones . Ddag\[Kappa]mat) . Bmat0 . MM0 . tmp);
-term4=4*((ones . \[Kappa]mat) . Bmat0 . MM0-I*a*(ones . Ddag\[Kappa]mat) . Bmat0 . sinmix)/.awsubs;
-\[Rho]hraws0lmmm=(term1+term2+term3+term4)/.awsubs;
-
-(* l+ l- *)
-cosmix=cosmix01;
-\[CapitalSigma]mat=(r^2*idmat+a^2*cosmix02)/.{r->rtry}/.awsubs;
-tmp1=(dd2\[Kappa]mat)/.\[Kappa]lsubs/.awsubs;
-tmp2=d\[Kappa]mat/.awsubs;
-tmp3=\[Lambda]hat . (sinm10-sinp10);
-term1=-hvec . Bmat0 . ((K[r]/\[Omega])*idmat-2*\[CapitalSigma]mat) . \[CapitalSigma]mat;
-term2=-2*(ones . tmp1) . Bmat0 . \[CapitalSigma]mat;
-term3=8*r*\[CapitalDelta][r]*(ones . tmp2) . Bmat0;
-term4=4*a^2*(ones . \[Kappa]mat) . Bmat0 . tmp3 . cosmix;
-\[CapitalSigma]\[CapitalDelta]hraws0lplm=(term1+term2+term3+term4)/.hlsubs/.\[Gamma]llsubs/.\[CapitalDelta]Ktbl/.{r->rtry}/.awsubs;
-
-{hraws0lplp,hraws0lmlm,hraws0mpmp,hraws0mmmm,\[Rho]hraws0lpmp,\[Rho]chraws0lpmm,\[Rho]chraws0lmmp,\[Rho]hraws0lmmm,\[CapitalSigma]\[CapitalDelta]hraws0lplm,hvec}
-];
-
-(*Module[{rtest=7,(*test1,test2,*)Psubs,Pp2vec,Pm2vec,rtry,\[CapitalDelta]Ktbl,myP2subs},
-	rtry=rtest;
-	\[CapitalDelta]Ktbl=EvaluateRHS[\[CapitalDelta]Ksubs,rtry]/.awsubs;
-	myP2subs=GetPsubsAll[2,rtry];
-	Print[test3={alplmterm1A,alplmterm1B,alplmterm2A,alplmterm2B}/.\[CapitalDelta]Ktbl/.awsubs/.myP2subs/.{r->rtry}];
-	EchoTiming[test1=Calcs2components[rtest],"old"];
-	Pp2vec=Table[If[ll>=lmins2,{Pp2[ll][r],Pp2[ll]'[r],Pp2[ll]''[r],Pp2[ll]'''[r],Pp2[ll]''''[r]},{0,0,0,0,0}],{ll,0,lmax}]/.GetPsubsAll[2,rtest];
-	Pm2vec=Table[If[ll>=lmins2,{Pm2[ll][r],Pm2[ll]'[r],Pm2[ll]''[r],Pm2[ll]'''[r],Pm2[ll]''''[r]},{0,0,0,0,0}],{ll,0,lmax}]/.GetPsubsAll[2,rtest];
-	EchoTiming[test2=CalculateSpin2Contributions[a0,mm,\[Omega]0,lmax,rtest,{Pp2vec,Pm2vec},{Bmatm2,Bmatp2}],"new"];
-];
-*)
-zeros=Table[SetPrecision[0,prec],{ll,0,lmax}];
-
 (* This is a bad way to do it, change in future *)
 tiny\[Epsilon]=SetPrecision[10^(-prec+3),prec];
 rsR[[1]]=r0+tiny\[Epsilon];
 If[rsR[[1]]>r0,Print["True"];];
 
-Print["s = 2, UP ..."];
-(s2R=GetComp[2]/@rsR;)//EchoTiming;
+(* Ngrids (currently for testing)*)
+lNGrid=NGrid["gridL", Transpose@{rsL,rsL}];
+rNGrid=NGrid["gridR", Transpose@{rsR,rsR}];
+
+Module[{buildPp2,buildPm2},
+buildPp2=Function[{rtry},
+ Table[If[ll>=lmins2,{Pp2[ll][r],Pp2[ll]'[r],Pp2[ll]''[r],Pp2[ll]'''[r],Pp2[ll]''''[r]},{0,0,0,0,0}],{ll,0,lmax}]/.GetPsubsAll[2,rtry]];
+ buildPm2=Function[{rtry},
+ Table[If[ll>=lmins2,{Pm2[ll][r],Pm2[ll]'[r],Pm2[ll]''[r],Pm2[ll]'''[r],Pm2[ll]''''[r]},{0,0,0,0,0}],{ll,0,lmax}]/.GetPsubsAll[2,rtry]];
+ Pp2ngridL= buildPp2/@lNGrid;
+ Pp2ngridR= buildPp2/@rNGrid;
+ Pm2ngridL= buildPm2/@lNGrid;
+ Pm2ngridR= buildPm2/@rNGrid;
+]//EchoT["Build Spin-2 solutions Ngrid"];
+
+Module[{buildh,build\[Kappa]},
+buildh=Function[{rtry},
+	Module[{\[CapitalDelta]Ktbl,tmp,rtest=rtry,s0subs},
+	\[CapitalDelta]Ktbl=EvaluateRHS[\[CapitalDelta]Ksubs,rtest]/.awsubs;
+	tmp=GetSpin0subs[rtest];
+	s0subs=Join[tmp,\[Kappa]lsubs/.tmp];
+	Table[If[ll>=lmins2,{h[ll][r],h[ll]'[r],h[ll]''[r]},{0,0,0}],{ll,0,lmax}]/.\[Kappa]lsubs/.hlsubs/.\[Gamma]llsubs/.awsubs/.s0subs/.\[CapitalDelta]Ktbl/.{r->rtest}
+	]
+ ];
+ build\[Kappa]=Function[{rtry},
+	Module[{\[CapitalDelta]Ktbl,tmp,rtest=rtry,s0subs},
+	\[CapitalDelta]Ktbl=EvaluateRHS[\[CapitalDelta]Ksubs,rtest]/.awsubs;
+	tmp=GetSpin0subs[rtest];
+	s0subs=Join[tmp,\[Kappa]lsubs/.tmp];
+	Table[If[ll>=lmins2,{\[Kappa][ll][r],\[Kappa][ll]'[r],\[Kappa][ll]''[r]},{0,0,0}],{ll,0,lmax}]/.\[Kappa]lsubs/.hlsubs/.\[Gamma]llsubs/.awsubs/.s0subs/.\[CapitalDelta]Ktbl/.{r->rtest}
+	]
+ ];
+ hngridL= buildh/@lNGrid;
+ hngridR= buildh/@rNGrid;
+ \[Kappa]ngridL= build\[Kappa]/@lNGrid;
+ \[Kappa]ngridR= build\[Kappa]/@rNGrid;
+]//EchoT["Build Spin-0 solutions Ngrid"];
+
+(*Module[{rtest=7,(*test1,test2,*)Psubs,hvec,\[Kappa]vec,rtry,\[CapitalDelta]Ktbl,myP2subs,tmp,s0subs},
+	EchoTiming[test1=Calcs0components[rtest],"old"];
+	\[CapitalDelta]Ktbl=EvaluateRHS[\[CapitalDelta]Ksubs,rtest]/.awsubs;
+	tmp=GetSpin0subs[rtest];
+	s0subs=Join[tmp,\[Kappa]lsubs/.tmp];
+	hvec=Table[If[ll>=lmins2,{h[ll][r],h[ll]'[r],h[ll]''[r]},{0,0,0}],{ll,0,lmax}]/.\[Kappa]lsubs/.hlsubs/.\[Gamma]llsubs/.awsubs/.s0subs/.\[CapitalDelta]Ktbl/.{r->rtest};
+	\[Kappa]vec=Table[If[ll>=lmins2,{\[Kappa][ll][r],\[Kappa][ll]'[r],\[Kappa][ll]''[r]},{0,0,0}],{ll,0,lmax}]/.\[Kappa]lsubs/.hlsubs/.\[Gamma]llsubs/.awsubs/.s0subs/.\[CapitalDelta]Ktbl/.{r->rtest};
+	Print[{hvec,\[Kappa]vec}];
+	EchoTiming[test2=CalculateSpin0Contributions[a0,mm,\[Omega]0,lmax,rtest,{hvec,\[Kappa]vec},{Bmat0,\[Gamma]mat,eigs0}],"new"];
+];*)
+
+
+zeros=Table[SetPrecision[0,prec],{ll,0,lmax}];
+
+EchoTiming[s2Rgrid=CalculateSpin2Contributions[a0,mm,\[Omega]0,lmax,rNGrid,{Pp2ngridR,Pm2ngridR},{Bmatm2,Bmatp2}],"s = 2, UP ..."];
+s2R=Transpose[s2Rgrid/. NGrid[_,data_]:> data,{2,3,1}];
 Print["s = 1, UP ..."];
 (s1R=GetComp[1]/@rsR;)//EchoTiming;
-Print["s = 0, UP ..."];
-(s0R=GetComp[0]/@rsR;)//EchoTiming;
-Print["s = 2, IN ..."];
-(s2L=GetComp[2]/@rsL;)//EchoTiming;
+(*Print["s = 0, UP ..."];
+(s0R=GetComp[0]/@rsR;)//EchoTiming;*)
+EchoTiming[s0Rgrid=CalculateSpin0Contributions[a0,mm,\[Omega]0,lmax,rNGrid,{hngridR,\[Kappa]ngridR},{Bmat0,\[Gamma]mat,eigs0}],"s = 0, UP ..."];
+s0R=Transpose[s0Rgrid/. NGrid[_,data_]:> data,{2,3,1}];
+
+EchoTiming[s2Lgrid=CalculateSpin2Contributions[a0,mm,\[Omega]0,lmax,lNGrid,{Pp2ngridL,Pm2ngridL},{Bmatm2,Bmatp2}],"s = 2, IN ..."];
+s2L=Transpose[s2Lgrid/. NGrid[_,data_]:> data,{2,3,1}];
 Print["s = 1, IN ..."];
 (s1L=GetComp[1]/@rsL;)//EchoTiming;
-Print["s = 0, IN ..."];
-(s0L=GetComp[0]/@rsL;)//EchoTiming;
+(*Print["s = 0, IN ..."];
+(s0L=GetComp[0]/@rsL;)//EchoTiming;*)
+EchoTiming[s0Lgrid=CalculateSpin0Contributions[a0,mm,\[Omega]0,lmax,lNGrid,{hngridL,\[Kappa]ngridL},{Bmat0,\[Gamma]mat,eigs0}],"s = 0, IN ..."];
+s0L=Transpose[s0Lgrid/. NGrid[_,data_]:> data,{2,3,1}];
 
 sallR=s2R+s1R+s0R;
 sallL=s2L+s1L+s0L;
