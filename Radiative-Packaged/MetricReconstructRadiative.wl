@@ -49,15 +49,43 @@ Off[FrontEndObject::notavail];
 (*Helper Functions*)
 
 
-Get\[CapitalLambda][l_,m_,a\[Omega]_]:=Module[{AA},
-SpinWeightedSpheroidalEigenvalue[-2,l,m,a\[Omega]]
-]; (* N.B. s = -2. *)
-
-
 EchoT[lbl_][expr_]:=EchoTiming[expr,lbl]
 
 
-(* ::Subsection:: *)
+(* ::Input::Initialization:: *)
+FudgeZero[x_?PossibleZeroQ]:=SetPrecision[10^-Accuracy[x],Max[2,$MinPrecision]];
+FudgeZero[0]:= SetPrecision[10^-$TeukolskyWorkingPrecision,Max[2,$MinPrecision]]
+FudgeZero[x_]:=x
+
+
+ConstructSolution[{insols_,upsols_},{Jump0_,Jump1_}]:=Module[
+{Rup0,Rup1,Rin0,Rin1,\[Alpha]in,\[Alpha]up},
+Rin0=insols[[1,2,1]];
+Rin1=insols[[2,2,1]];
+Rup0=upsols[[1,2,1]];
+Rup1=upsols[[2,2,1]];
+{\[Alpha]up,\[Alpha]in}={(Jump1 Rin0-Jump0 Rin1)/(-Rin1 Rup0+Rin0 Rup1),(Jump1 Rup0-Jump0 Rup1)/(-Rin1 Rup0+Rin0 Rup1)};
+Return[{\[Alpha]in insols,\[Alpha]up upsols}]
+]
+
+
+ConstructSolutionh\[Kappa][{{inhs_,in\[Kappa]s_},{uphs_,up\[Kappa]s_}},{hj0_,hj1_},{\[Kappa]j0_,\[Kappa]j1_}]:=Module[
+{hup0,hup1,hin0,hin1,\[Kappa]up0,\[Kappa]up1,\[Kappa]in0,\[Kappa]in1,\[Alpha]hin,\[Alpha]hup,\[Alpha]\[Kappa]up,\[Alpha]\[Kappa]in},
+hin0=inhs[[1,2,1]];
+hin1=inhs[[2,2,1]];
+hup0=uphs[[1,2,1]];
+hup1=uphs[[2,2,1]];
+\[Kappa]in0=in\[Kappa]s[[1,2,1]];
+\[Kappa]in1=in\[Kappa]s[[2,2,1]];
+\[Kappa]up0=up\[Kappa]s[[1,2,1]];
+\[Kappa]up1=up\[Kappa]s[[2,2,1]];
+{\[Alpha]hup,\[Alpha]hin}={(hj1 hin0-hj0 hin1)/(-hin1 hup0+hin0 hup1),(hj1 hup0-hj0 hup1)/(-hin1 hup0+hin0 hup1)};
+\[Alpha]\[Kappa]up=(-hin1 (\[Alpha]hin \[Kappa]in0+\[Kappa]j0-\[Alpha]hup \[Kappa]up0)+hin0 (\[Alpha]hin \[Kappa]in1+\[Kappa]j1-\[Alpha]hup \[Kappa]up1))/(-hin1 hup0+hin0 hup1);\[Alpha]\[Kappa]in=(-hup1 (\[Alpha]hin \[Kappa]in0+\[Kappa]j0-\[Alpha]hup \[Kappa]up0)+hup0 (\[Alpha]hin \[Kappa]in1+\[Kappa]j1-\[Alpha]hup \[Kappa]up1))/(-hin1 hup0+hin0 hup1);
+Return[{\[Alpha]hin inhs,\[Alpha]hup uphs,\[Alpha]\[Kappa]in*inhs+\[Alpha]hin in\[Kappa]s,\[Alpha]\[Kappa]up*uphs+\[Alpha]hup up\[Kappa]s}]
+]
+
+
+(* ::Subsection::Closed:: *)
 (*Teukolsky Equation stuff*)
 
 
@@ -155,18 +183,22 @@ Derivative],
 MultilineFunction->None]\)[\[Theta]]->S0[\[Theta]] (a^2 \[Omega]^2 Cos[\[Theta]]^2-(\[Lambda]0+2 a m \[Omega]-6 m^2 Cot[\[Theta]]^2) Csc[\[Theta]]^2+3 m^2 Csc[\[Theta]]^4-a^2 \[Omega]^2 Sin[\[Theta]]^2)-2 (-a^2 \[Omega]^2 Cos[\[Theta]]+(2+m^2) Cot[\[Theta]] Csc[\[Theta]]^3) Sin[\[Theta]] Derivative[1][S0][\[Theta]]+(Cot[\[Theta]] (\[Lambda]0+2 a m \[Omega]-3 m^2 Csc[\[Theta]]^2)+a^2 \[Omega]^2 Cos[\[Theta]] Sin[\[Theta]]) Derivative[1][S0][\[Theta]]+(-\[Lambda]0-2 a m \[Omega]+Cot[\[Theta]]^2+(1+m^2) Csc[\[Theta]]^2+a^2 \[Omega]^2 Sin[\[Theta]]^2) (S0[\[Theta]] (-\[Lambda]0-2 a m \[Omega]+m^2 Csc[\[Theta]]^2+a^2 \[Omega]^2 Sin[\[Theta]]^2)-Cot[\[Theta]] Derivative[1][S0][\[Theta]])}
 
 
-DefTeukSubs["\[Kappa]0",{\[Kappa]0_Symbol,h0_Symbol},{\[CapitalDelta]_Symbol,K_Symbol},{M_,a_,m_,\[Omega]_,\[Lambda]0_},{r_Symbol,\[Theta]_Symbol}]:={Derivative[2][\[Kappa]0][r]->((r^2+a^2 Cos[\[Theta]]^2) h0[r] \[CapitalDelta][r]-2 K[r]^2 \[Kappa]0[r]+2 \[CapitalDelta][r] (\[Lambda]0 \[Kappa]0[r]+2 (M-r) Derivative[1][\[Kappa]0][r]))/(2 \[CapitalDelta][r]^2),\!\(\*SuperscriptBox[\(\[Kappa]0\), 
+DefTeukSubs["\[Kappa]",{\[Kappa]_Symbol,h_Symbol},{\[CapitalDelta]_Symbol,K_Symbol},{M_,a_,m_,\[Omega]_,\[Lambda]0_,\[Gamma]ll_},{r_Symbol}]:={
+Derivative[2][\[Kappa]][r]->((r^2+a^2 \[Gamma]ll) h[r] \[CapitalDelta][r]-2 K[r]^2 \[Kappa][r]+2 \[CapitalDelta][r] (\[Lambda]0 \[Kappa][r]+2 (M-r) Derivative[1][\[Kappa]][r]))/(2 \[CapitalDelta][r]^2),
+\!\(\*SuperscriptBox[\(\[Kappa]\), 
 TagBox[
 RowBox[{"(", "3", ")"}],
 Derivative],
-MultilineFunction->None]\)[r]->1/(2 \[CapitalDelta][r]^3) (2 h0[r] \[CapitalDelta][r] (2 (M-r) (r^2+a^2 Cos[\[Theta]]^2)+r \[CapitalDelta][r])-8 r \[Omega] K[r] \[CapitalDelta][r] \[Kappa]0[r]-2 K[r]^2 (6 (M-r) \[Kappa]0[r]+\[CapitalDelta][r] Derivative[1][\[Kappa]0][r])+\[CapitalDelta][r] (8 (M-r) \[Lambda]0 \[Kappa]0[r]+16 (M-r)^2 Derivative[1][\[Kappa]0][r]+\[CapitalDelta][r] ((r^2+a^2 Cos[\[Theta]]^2) Derivative[1][h0][r]+2 (-2+\[Lambda]0) Derivative[1][\[Kappa]0][r]))),\!\(\*SuperscriptBox[\(\[Kappa]0\), 
+MultilineFunction->None]\)[r]->1/(2 \[CapitalDelta][r]^3) (2 h[r] \[CapitalDelta][r] (2 (M-r) (r^2+a^2 \[Gamma]ll)+r \[CapitalDelta][r])-8 r \[Omega] K[r] \[CapitalDelta][r] \[Kappa][r]-2 K[r]^2 (6 (M-r) \[Kappa][r]+\[CapitalDelta][r] Derivative[1][\[Kappa]][r])+\[CapitalDelta][r] (8 (M-r) \[Lambda]0 \[Kappa][r]+16 (M-r)^2 Derivative[1][\[Kappa]][r]+\[CapitalDelta][r] ((r^2+a^2 \[Gamma]ll) Derivative[1][h][r]+2 (-2+\[Lambda]0) Derivative[1][\[Kappa]][r]))),
+\!\(\*SuperscriptBox[\(\[Kappa]\), 
 TagBox[
 RowBox[{"(", "4", ")"}],
 Derivative],
-MultilineFunction->None]\)[r]->1/(2 \[CapitalDelta][r]^4) (h0[r] \[CapitalDelta][r] (12 (M-r)^2 (a^2+2 r^2+a^2 Cos[2 \[Theta]])-(r^2+a^2 Cos[\[Theta]]^2) K[r]^2+(r (12 M+r (-18+\[Lambda]0))+a^2 (-6+\[Lambda]0) Cos[\[Theta]]^2) \[CapitalDelta][r]+2 \[CapitalDelta][r]^2)+2 K[r]^4 \[Kappa]0[r]-4 K[r]^2 ((22 (M-r)^2+(-4+\[Lambda]0) \[CapitalDelta][r]) \[Kappa]0[r]+6 (M-r) \[CapitalDelta][r] Derivative[1][\[Kappa]0][r])-8 \[Omega] K[r] \[CapitalDelta][r] ((10 (M-r) r+\[CapitalDelta][r]) \[Kappa]0[r]+2 r \[CapitalDelta][r] Derivative[1][\[Kappa]0][r])+\[CapitalDelta][r] (2 (24 (M-r)^2 \[Lambda]0+(-6 \[Lambda]0+\[Lambda]0^2-8 r^2 \[Omega]^2) \[CapitalDelta][r]) \[Kappa]0[r]+96 (M-r)^3 Derivative[1][\[Kappa]0][r]+(M-r) \[CapitalDelta][r] (3 (a^2+2 r^2+a^2 Cos[2 \[Theta]]) Derivative[1][h0][r]+16 (-3+\[Lambda]0) Derivative[1][\[Kappa]0][r])+\[CapitalDelta][r]^2 (4 r Derivative[1][h0][r]+(r^2+a^2 Cos[\[Theta]]^2) Derivative[2][h0][r])))}
+MultilineFunction->None]\)[r]->1/(2 \[CapitalDelta][r]^4) (h[r] \[CapitalDelta][r] (24 (M-r)^2 (r^2+a^2 \[Gamma]ll)-(r^2+a^2 \[Gamma]ll) K[r]^2+(12 M r+r^2 (-18+\[Lambda]0)+a^2 \[Gamma]ll (-6+\[Lambda]0)) \[CapitalDelta][r]+2 \[CapitalDelta][r]^2)+2 K[r]^4 \[Kappa][r]-4 K[r]^2 ((22 (M-r)^2+(-4+\[Lambda]0) \[CapitalDelta][r]) \[Kappa][r]+6 (M-r) \[CapitalDelta][r] Derivative[1][\[Kappa]][r])-8 \[Omega] K[r] \[CapitalDelta][r] ((10 (M-r) r+\[CapitalDelta][r]) \[Kappa][r]+2 r \[CapitalDelta][r] Derivative[1][\[Kappa]][r])+\[CapitalDelta][r] (2 (24 (M-r)^2 \[Lambda]0+(-6 \[Lambda]0+\[Lambda]0^2-8 r^2 \[Omega]^2) \[CapitalDelta][r]) \[Kappa][r]+96 (M-r)^3 Derivative[1][\[Kappa]][r]+2 (M-r) \[CapitalDelta][r] (3 (r^2+a^2 \[Gamma]ll) Derivative[1][h][r]+8 (-3+\[Lambda]0) Derivative[1][\[Kappa]][r])+\[CapitalDelta][r]^2 (4 r Derivative[1][h][r]+(r^2+a^2 \[Gamma]ll) Derivative[2][h][r])))
+}
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Teukolksy Starabinskii identities*)
 
 
@@ -202,6 +234,15 @@ Kr=-a m+(a^2+r^2) \[Omega];
 CC=(-1)^(l+m) 12 I  \[Omega]+Sqrt[\[CapitalLambda]^2 (2+\[CapitalLambda])^2+96 a^2 \[CapitalLambda] \[Omega]^2+8 a \[CapitalLambda] (6+5 \[CapitalLambda]) \[Omega] (m-a \[Omega])+144 a^2 \[Omega]^2 (m-a \[Omega])^2];
 Return[{1/(CC \[CapitalDelta]r^2) (8 Kr^4 Pm20+8 I Kr^3 Pm21 \[CapitalDelta]r+8 Kr^2 Pm20 ((-1+r)^2-\[CapitalDelta]r (1+\[CapitalLambda]+3 I r \[Omega]))-4 I Kr \[CapitalDelta]r (-2 Pm21 (-1+r)^2+Pm21 \[CapitalDelta]r (2+\[CapitalLambda])+5 I Pm20 \[CapitalDelta]r \[Omega]+Pm20 (1-r) (\[CapitalLambda]+8 I r \[Omega]))+\[CapitalDelta]r^2 (8 I Pm21 (r-r^2+\[CapitalDelta]r) \[Omega]+Pm20 (\[CapitalLambda] (2+\[CapitalLambda])+4 I (3+r \[CapitalLambda]) \[Omega]+12 r^2 \[Omega]^2))),1/(CC \[CapitalDelta]r^3) (-8 I Kr^5 Pm20+8 Kr^4 Pm21 \[CapitalDelta]r-4 I Kr^3 Pm20 (2+2 (-2+r) r-\[CapitalDelta]r (2+3 \[CapitalLambda]))+\[CapitalDelta]r^3 (Pm21 \[CapitalLambda] (2+\[CapitalLambda])-4 I (-3 Pm20 \[CapitalLambda]+Pm21 (3+r \[CapitalLambda])) \[Omega]+12 Pm21 r^2 \[Omega]^2)-4 I Kr \[CapitalDelta]r^2 (Pm21 (-1+r) \[CapitalLambda]+I Pm21 (-8 (-1+r) r+5 \[CapitalDelta]r) \[Omega]+Pm20 (\[CapitalLambda]+\[CapitalLambda]^2+24 r^2 \[Omega]^2))+8 Kr^2 \[CapitalDelta]r (I Pm20 (7 (-1+r) r-4 \[CapitalDelta]r) \[Omega]+Pm21 (1-\[CapitalDelta]r (1+\[CapitalLambda])+r (-2+r+3 I \[CapitalDelta]r \[Omega])))),1/(CC \[CapitalDelta]r^4) (-8 Kr^6 Pm20+8 I Kr^5 (2 Pm20 (-1+r)-Pm21 \[CapitalDelta]r)+4 Kr^3 (2 I ((-1+r)^2-\[CapitalDelta]r) (2 Pm20 (-1+r)-Pm21 \[CapitalDelta]r)+3 I \[CapitalDelta]r (Pm20-Pm20 r+Pm21 \[CapitalDelta]r) \[CapitalLambda]+\[CapitalDelta]r (32 Pm20 (-1+r) r-5 Pm20 \[CapitalDelta]r+16 Pm21 r \[CapitalDelta]r) \[Omega])+\[CapitalDelta]r^3 (\[CapitalLambda] (2+\[CapitalLambda]) (2 Pm21 (-1+r)+Pm20 \[CapitalLambda])-4 I (Pm20 (3+r (-2+\[CapitalLambda])) \[CapitalLambda]+Pm21 (-6+6 r-4 r \[CapitalLambda]+4 r^2 \[CapitalLambda]-2 \[CapitalDelta]r \[CapitalLambda])) \[Omega]+4 r (2 Pm21 (-5 (-1+r) r+8 \[CapitalDelta]r)+Pm20 (24+11 r \[CapitalLambda])) \[Omega]^2-96 I Pm20 r^3 \[Omega]^3)+4 Kr \[CapitalDelta]r^2 (-I Pm21 \[CapitalDelta]r \[CapitalLambda] (2+\[CapitalLambda])-2 Pm21 (\[CapitalDelta]r+r (-4-4 (-2+r) r+\[CapitalDelta]r (7+4 \[CapitalLambda]))) \[Omega]+Pm20 \[Omega] (12-12 r+4 r \[CapitalLambda]-4 r^2 \[CapitalLambda]+5 \[CapitalDelta]r \[CapitalLambda]+4 I r (7 (-1+r) r-10 \[CapitalDelta]r) \[Omega]))-8 Kr^4 (Pm20+2 Pm21 (-1+r) \[CapitalDelta]r-Pm20 \[CapitalDelta]r (1+2 \[CapitalLambda])+Pm20 r (-2+r+5 I \[CapitalDelta]r \[Omega]))+Kr^2 \[CapitalDelta]r (16 Pm21 (-1+r) (-(-1+r)^2+\[CapitalDelta]r)+8 I Pm21 (7 (-1+r) r-\[CapitalDelta]r) \[CapitalDelta]r \[Omega]+Pm20 (-\[CapitalLambda] (8+8 (-2+r) r+\[CapitalDelta]r (10+9 \[CapitalLambda]))-4 I (20 r ((-1+r)^2-\[CapitalDelta]r)+7 \[CapitalDelta]r-9 r \[CapitalDelta]r \[CapitalLambda]) \[Omega]-204 r^2 \[CapitalDelta]r \[Omega]^2))),1/(CC \[CapitalDelta]r^5) (8 I Kr^7 Pm20+8 Kr^6 (6 Pm20 (-1+r)-Pm21 \[CapitalDelta]r)+4 Kr \[CapitalDelta]r^2 (-I Pm20 \[CapitalLambda] (2+\[CapitalLambda]) (2 (-1+r)^2+\[CapitalDelta]r \[CapitalLambda])+(8 (-1+r)^2 (3 Pm20-4 Pm21 (-1+r) r)+4 (-3 Pm20+5 Pm21 (-1+r) (-1+2 r)) \[CapitalDelta]r-14 Pm21 \[CapitalDelta]r^2+\[CapitalDelta]r (Pm20 (4-18 r)-4 Pm21 (-1+r) r-3 Pm21 \[CapitalDelta]r) \[CapitalLambda]-9 Pm20 r \[CapitalDelta]r \[CapitalLambda]^2) \[Omega]-4 I (3 Pm21 r \[CapitalDelta]r (-7 (-1+r) r+4 \[CapitalDelta]r)+Pm20 (-44 r^3+22 r^4+29 r \[CapitalDelta]r+10 \[CapitalDelta]r^2+r^2 (22-17 \[CapitalDelta]r+7 \[CapitalDelta]r \[CapitalLambda]))) \[Omega]^2-204 Pm20 r^3 \[CapitalDelta]r \[Omega]^3)+\[CapitalDelta]r^3 (Pm21 \[CapitalDelta]r \[CapitalLambda] (2+\[CapitalLambda])^2-4 I (2+\[CapitalLambda]) (-Pm20 (2 (-1+r) r+\[CapitalDelta]r) \[CapitalLambda]+3 Pm21 (\[CapitalDelta]r+r \[CapitalDelta]r \[CapitalLambda])) \[Omega]+4 (Pm21 (-32 r^3+16 r^4+8 r \[CapitalDelta]r+16 \[CapitalDelta]r^2+r^2 (16-26 \[CapitalDelta]r-5 \[CapitalDelta]r \[CapitalLambda]))+8 Pm20 (3 \[CapitalDelta]r+r (3+r (-3+\[CapitalLambda])-r^2 \[CapitalLambda]+4 \[CapitalDelta]r \[CapitalLambda]))) \[Omega]^2-96 I r^2 (Pm21 r \[CapitalDelta]r+Pm20 (r-r^2+\[CapitalDelta]r)) \[Omega]^3)-4 I Kr^5 (-12 Pm21 (-1+r) \[CapitalDelta]r+Pm20 (14-2 \[CapitalDelta]r+5 \[CapitalDelta]r \[CapitalLambda]+2 r (-14+7 r-12 I \[CapitalDelta]r \[Omega])))+8 Kr^4 (2 Pm20 (-1+r) (3+3 (-2+r) r-3 \[CapitalDelta]r-4 \[CapitalDelta]r \[CapitalLambda])-I Pm20 \[CapitalDelta]r (5 (-1+r) r+4 \[CapitalDelta]r) \[Omega]+Pm21 \[CapitalDelta]r (7-\[CapitalDelta]r+2 \[CapitalDelta]r \[CapitalLambda]+r (-14+7 r-15 I \[CapitalDelta]r \[Omega])))-4 I Kr^3 (Pm21 \[CapitalDelta]r (3 (-1+r) (-4-4 (-2+r) r+4 \[CapitalDelta]r+3 \[CapitalDelta]r \[CapitalLambda])+I \[CapitalDelta]r (-32 (-1+r) r+11 \[CapitalDelta]r) \[Omega])+Pm20 (16+16 r^4+8 r (-8+5 \[CapitalDelta]r+4 \[CapitalDelta]r \[CapitalLambda])-\[CapitalDelta]r (4 (5+4 \[CapitalLambda])+\[CapitalDelta]r (-4+\[CapitalLambda]+4 \[CapitalLambda]^2+42 I \[Omega]))+2 I r \[CapitalDelta]r (-72+45 \[CapitalDelta]r+16 \[CapitalDelta]r \[CapitalLambda]) \[Omega]+16 r^3 (-4-9 I \[CapitalDelta]r \[Omega])-4 r^2 (-24+\[CapitalDelta]r (5+4 \[CapitalLambda]+12 \[Omega] (-6 I+\[CapitalDelta]r \[Omega])))))+Kr^2 \[CapitalDelta]r (2 Pm20 (2 (-1+r) (8 (-1+r)^2+\[CapitalDelta]r) \[CapitalLambda]+9 (-1+r) \[CapitalDelta]r \[CapitalLambda]^2-2 I (4 (-1+r) r-5 \[CapitalDelta]r) \[CapitalDelta]r \[CapitalLambda] \[Omega]+4 \[Omega] (I (40 (-1+r)^3 r-(-1+r) (-31+38 r) \[CapitalDelta]r+10 \[CapitalDelta]r^2)+3 r (49 (-1+r) r-22 \[CapitalDelta]r) \[CapitalDelta]r \[Omega]))+Pm21 (64+64 r^4-\[CapitalDelta]r (8 (10+\[CapitalLambda])+\[CapitalDelta]r (-16+\[CapitalLambda] (10+9 \[CapitalLambda])+84 I \[Omega]))+r^3 (-256-240 I \[CapitalDelta]r \[Omega])+4 r (-64+4 \[CapitalDelta]r (10+\[CapitalLambda])+3 I \[CapitalDelta]r (-20+20 \[CapitalDelta]r+9 \[CapitalDelta]r \[CapitalLambda]) \[Omega])+4 r^2 (96+\[CapitalDelta]r (-20-2 \[CapitalLambda]+15 \[Omega] (8 I+3 \[CapitalDelta]r \[Omega])))))),1/(CC \[CapitalDelta]r^6) (Kr^4 (8 Kr^4 Pm20+8 I Kr^3 Pm21 \[CapitalDelta]r+8 Kr^2 Pm20 ((-1+r)^2-\[CapitalDelta]r (1+\[CapitalLambda]+3 I r \[Omega]))-4 I Kr \[CapitalDelta]r (-2 Pm21 (-1+r)^2+Pm21 \[CapitalDelta]r (2+\[CapitalLambda])+5 I Pm20 \[CapitalDelta]r \[Omega]+Pm20 (1-r) (\[CapitalLambda]+8 I r \[Omega]))+\[CapitalDelta]r^2 (8 I Pm21 (r-r^2+\[CapitalDelta]r) \[Omega]+Pm20 (\[CapitalLambda] (2+\[CapitalLambda])+4 I (3+r \[CapitalLambda]) \[Omega]+12 r^2 \[Omega]^2)))+8 I Kr^3 (1-r) (8 Kr^4 Pm20+8 I Kr^3 Pm21 \[CapitalDelta]r+8 Kr^2 Pm20 ((-1+r)^2-\[CapitalDelta]r (1+\[CapitalLambda]+3 I r \[Omega]))-4 I Kr \[CapitalDelta]r (-2 Pm21 (-1+r)^2+Pm21 \[CapitalDelta]r (2+\[CapitalLambda])+5 I Pm20 \[CapitalDelta]r \[Omega]+Pm20 (1-r) (\[CapitalLambda]+8 I r \[Omega]))+\[CapitalDelta]r^2 (8 I Pm21 (r-r^2+\[CapitalDelta]r) \[Omega]+Pm20 (\[CapitalLambda] (2+\[CapitalLambda])+4 I (3+r \[CapitalLambda]) \[Omega]+12 r^2 \[Omega]^2)))-4 I Kr (-12 (-1+r)^3-I \[CapitalDelta]r^2 \[Omega]+2 (-1+r) \[CapitalDelta]r (3-\[CapitalLambda]+11 I r \[Omega])) (8 Kr^4 Pm20+8 I Kr^3 Pm21 \[CapitalDelta]r+8 Kr^2 Pm20 ((-1+r)^2-\[CapitalDelta]r (1+\[CapitalLambda]+3 I r \[Omega]))-4 I Kr \[CapitalDelta]r (-2 Pm21 (-1+r)^2+Pm21 \[CapitalDelta]r (2+\[CapitalLambda])+5 I Pm20 \[CapitalDelta]r \[Omega]+Pm20 (1-r) (\[CapitalLambda]+8 I r \[Omega]))+\[CapitalDelta]r^2 (8 I Pm21 (r-r^2+\[CapitalDelta]r) \[Omega]+Pm20 (\[CapitalLambda] (2+\[CapitalLambda])+4 I (3+r \[CapitalLambda]) \[Omega]+12 r^2 \[Omega]^2)))-I \[CapitalDelta]r (48 (-1+r)^2 r \[Omega]+\[CapitalDelta]r (I \[CapitalLambda] (2+\[CapitalLambda])+8 (3+r (-3+2 \[CapitalLambda])) \[Omega]-72 I r^2 \[Omega]^2)) (8 Kr^4 Pm20+8 I Kr^3 Pm21 \[CapitalDelta]r+8 Kr^2 Pm20 ((-1+r)^2-\[CapitalDelta]r (1+\[CapitalLambda]+3 I r \[Omega]))-4 I Kr \[CapitalDelta]r (-2 Pm21 (-1+r)^2+Pm21 \[CapitalDelta]r (2+\[CapitalLambda])+5 I Pm20 \[CapitalDelta]r \[Omega]+Pm20 (1-r) (\[CapitalLambda]+8 I r \[Omega]))+\[CapitalDelta]r^2 (8 I Pm21 (r-r^2+\[CapitalDelta]r) \[Omega]+Pm20 (\[CapitalLambda] (2+\[CapitalLambda])+4 I (3+r \[CapitalLambda]) \[Omega]+12 r^2 \[Omega]^2)))-16 \[CapitalDelta]r (r-r^2+\[CapitalDelta]r) \[Omega] (8 Kr^5 Pm20+8 I Kr^4 Pm21 \[CapitalDelta]r+4 Kr^3 Pm20 (2+2 (-2+r) r-\[CapitalDelta]r (2+3 \[CapitalLambda]))+\[CapitalDelta]r^3 (-12 Pm20 \[CapitalLambda] \[Omega]+Pm21 (I \[CapitalLambda] (2+\[CapitalLambda])+4 (3+r \[CapitalLambda]) \[Omega]+12 I r^2 \[Omega]^2))+4 Kr \[CapitalDelta]r^2 (5 I Pm21 \[CapitalDelta]r \[Omega]+Pm21 (-1+r) (\[CapitalLambda]-8 I r \[Omega])+Pm20 (\[CapitalLambda]+\[CapitalLambda]^2+24 r^2 \[Omega]^2))+8 Kr^2 \[CapitalDelta]r (Pm20 (-7 (-1+r) r+4 \[CapitalDelta]r) \[Omega]+I Pm21 (1-\[CapitalDelta]r (1+\[CapitalLambda])+r (-2+r+3 I \[CapitalDelta]r \[Omega]))))-8 Kr (2-\[CapitalDelta]r+r (-4+2 r-I \[CapitalDelta]r \[Omega])) (8 Kr^5 Pm20+8 I Kr^4 Pm21 \[CapitalDelta]r+4 Kr^3 Pm20 (2+2 (-2+r) r-\[CapitalDelta]r (2+3 \[CapitalLambda]))+\[CapitalDelta]r^3 (-12 Pm20 \[CapitalLambda] \[Omega]+Pm21 (I \[CapitalLambda] (2+\[CapitalLambda])+4 (3+r \[CapitalLambda]) \[Omega]+12 I r^2 \[Omega]^2))+4 Kr \[CapitalDelta]r^2 (5 I Pm21 \[CapitalDelta]r \[Omega]+Pm21 (-1+r) (\[CapitalLambda]-8 I r \[Omega])+Pm20 (\[CapitalLambda]+\[CapitalLambda]^2+24 r^2 \[Omega]^2))+8 Kr^2 \[CapitalDelta]r (Pm20 (-7 (-1+r) r+4 \[CapitalDelta]r) \[Omega]+I Pm21 (1-\[CapitalDelta]r (1+\[CapitalLambda])+r (-2+r+3 I \[CapitalDelta]r \[Omega]))))+2 Kr^2 (-((14 (-1+r)^2+\[CapitalDelta]r (\[CapitalLambda]-8 I r \[Omega])) (8 Kr^4 Pm20+8 I Kr^3 Pm21 \[CapitalDelta]r+8 Kr^2 Pm20 ((-1+r)^2-\[CapitalDelta]r (1+\[CapitalLambda]+3 I r \[Omega]))-4 I Kr \[CapitalDelta]r (-2 Pm21 (-1+r)^2+Pm21 \[CapitalDelta]r (2+\[CapitalLambda])+5 I Pm20 \[CapitalDelta]r \[Omega]+Pm20 (1-r) (\[CapitalLambda]+8 I r \[Omega]))+\[CapitalDelta]r^2 (8 I Pm21 (r-r^2+\[CapitalDelta]r) \[Omega]+Pm20 (\[CapitalLambda] (2+\[CapitalLambda])+4 I (3+r \[CapitalLambda]) \[Omega]+12 r^2 \[Omega]^2))))+2 I (1-r) (8 Kr^5 Pm20+8 I Kr^4 Pm21 \[CapitalDelta]r+4 Kr^3 Pm20 (2+2 (-2+r) r-\[CapitalDelta]r (2+3 \[CapitalLambda]))+\[CapitalDelta]r^3 (-12 Pm20 \[CapitalLambda] \[Omega]+Pm21 (I \[CapitalLambda] (2+\[CapitalLambda])+4 (3+r \[CapitalLambda]) \[Omega]+12 I r^2 \[Omega]^2))+4 Kr \[CapitalDelta]r^2 (5 I Pm21 \[CapitalDelta]r \[Omega]+Pm21 (-1+r) (\[CapitalLambda]-8 I r \[Omega])+Pm20 (\[CapitalLambda]+\[CapitalLambda]^2+24 r^2 \[Omega]^2))+8 Kr^2 \[CapitalDelta]r (Pm20 (-7 (-1+r) r+4 \[CapitalDelta]r) \[Omega]+I Pm21 (1-\[CapitalDelta]r (1+\[CapitalLambda])+r (-2+r+3 I \[CapitalDelta]r \[Omega]))))))}
 ]
+]
+
+
+Pp1fromPm1[{Pm10_,Pm11_,Pm12_},r_NGrid,{l_,m_,a_,\[Omega]_, \[Lambda]_}]:=Module[
+{\[CapitalDelta]r,Kr,BB},
+\[CapitalDelta]r=r^2-2r+a^2;
+Kr=-a m+(a^2+r^2) \[Omega];
+BB=Sqrt[\[Lambda]^2 +4*a*m*\[Omega]-4*a^2*\[Omega]^2 ];
+Return[{(-2 Kr^2 Pm10-2 I Kr Pm11 \[CapitalDelta]r+Pm10 \[CapitalDelta]r (\[Lambda]+2 I r \[Omega]))/(BB \[CapitalDelta]r),(2 I Kr^3 Pm10-2 Kr^2 Pm11 \[CapitalDelta]r-2 I Kr Pm10 \[CapitalDelta]r \[Lambda]+\[CapitalDelta]r^2 (Pm11 \[Lambda]+2 I (Pm10-Pm11 r) \[Omega]))/(BB \[CapitalDelta]r^2),((Kr^2-2 I Kr (-1+r)-\[CapitalDelta]r \[Lambda]+4 I r \[CapitalDelta]r \[Omega]) (2 Kr^2 Pm10+2 I Kr Pm11 \[CapitalDelta]r-Pm10 \[CapitalDelta]r (\[Lambda]+2 I r \[Omega])))/(BB \[CapitalDelta]r^3)}]
 ]
 
 
@@ -357,7 +398,7 @@ SparseArray[{Band[{1,1}]->bands[[3]],Band[{2,1}]->bands[[2]],Band[{3,1}]->bands[
 ClearMixingMatrices[]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Diverse matrices*)
 
 
@@ -468,7 +509,820 @@ Return[{rsL,rsR}]
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
+(*Jumps*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*sourcesubs*)
+
+
+Calcsourcesubs[OD_OrbitalData,{dhlplp_,dhlmlm_,dhmpmp_,dhmmmm_,d\[Rho]chlpmm_},{Y0_,Ym1_,Yp2_,Ym2_}]:=
+Module[{a,r,ut,calA,calB,EE,LL,M=1},
+a=ODspin[OD];
+r=ODperiapsis[OD];
+EE=KerrEnergy[OD];
+LL=KerrAngularMomentum[OD];
+ut=(a^3+(-2+r) r^(5/2)+a r (-2 M+r)+a^2 Sqrt[r] (-2+2 M+r))/(Sqrt[1+(2 a)/r^(3/2)-3/r] r^(3/2) (a^2+r (-2 M+r)));
+calA=1/(a^2+(-2+r) r)*(EE*(r^2+a^2)-a*LL);
+calB=LL-a*EE;
+Return[
+{
+dhlplp->-16*\[Pi]/((a^2+(-2+r) r)*ut)*calA^2*Y0,
+dhlmlm->-16*\[Pi]/((a^2+(-2+r) r)*ut)*calA^2*Y0,
+dhmpmp->16*\[Pi]/((a^2+(-2+r) r)*ut)*calB^2*Yp2,
+dhmmmm->16*\[Pi]/((a^2+(-2+r) r)*ut)*calB^2*Ym2,
+d\[Rho]chlpmm->-16*\[Pi]/((a^2+(-2+r) r)*ut)*(r*I*calA*calB)*Ym1
+}
+]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Spin 2*)
+
+
+CalcJump[{s:(2|-2),m_,\[CapitalLambda]_},OD_?CircularEquatorialQ,{P2j0_,P2j1_},{S2_,S2p_}]:=Module[{a,\[Sigma],\[CapitalOmega],M=1,r,EE,LL,ut,calA,calB,calD, Jump0, Jump1},
+\[Sigma]=Sign[s];
+a=ODspin[OD];
+\[CapitalOmega]=KerrAzimuthalFrequency[OD];
+r=ODperiapsis[OD];
+EE=KerrEnergy[OD];
+LL=KerrAngularMomentum[OD];
+ut=(a^3+(-2+r) r^(5/2)+a r (-2 M+r)+a^2 Sqrt[r] (-2+2 M+r))/(Sqrt[1+(2 a)/r^(3/2)-3/r] r^(3/2) (a^2+r (-2 M+r)));
+calA=1/(a^2+(-2+r) r)*(EE*(r^2+a^2)-a*LL);
+calB=LL-a*EE;
+calD=4*\[Pi]/(r^2*ut);
+
+Jump0=-(1/r)2 I calB calD (a^3 calA m r S2 \[Sigma] \[CapitalOmega]+a m r S2 \[Sigma] (-calB+calA (-2+r) r \[CapitalOmega])+a^2 (-calA r (S2p+m S2 \[Sigma])+calB S2 (I+m r \[Sigma] \[CapitalOmega]))+r (-calA (-2+r) r (S2p+m S2 \[Sigma])+calB S2 (-I+m r^2 \[Sigma] \[CapitalOmega])));
+Jump1=1/(r (a^2+(-2+r) r)) calD (calB^2 r S2 ((a^2+(-2+r) r) \[CapitalLambda]-6 I m r (a^2+(-2+r) r) \[Sigma] \[CapitalOmega]+2 I m \[Sigma] (a-a r-a^2 \[CapitalOmega]+r^2 \[CapitalOmega])+2 I m (-1+r) \[Sigma] (-a+a^2 \[CapitalOmega]+r^2 \[CapitalOmega])-m^2 \[Sigma]^2 (a-(a^2+r^2) \[CapitalOmega])^2)+2 I calA (a^2+(-2+r) r) (S2p+m S2 \[Sigma] (1-a \[CapitalOmega])) (calA (a^2+(-2+r) r) (a-I m r \[Sigma] (-1+a \[CapitalOmega]))+calB (2 (a^2+(-2+r) r)+I m r \[Sigma] (a-(a^2+r^2) \[CapitalOmega])))+S2 (calA^2 r (a^2+(-2+r) r)^2 \[CapitalLambda]+calB^2 m \[Sigma] (-2 I r (a-a r-a^2 \[CapitalOmega]+r^2 \[CapitalOmega])+2 I (a^2+(-2+r) r) (a-(a^2+r^2) \[CapitalOmega])-m r \[Sigma] (a-(a^2+r^2) \[CapitalOmega])^2)));
+Return[{P2j0 -> Jump0,P2j1 -> Jump1}]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Spin 0*)
+
+
+CalcJump[{0,m_},OD_?CircularEquatorialQ,{hj0_,hj1_},{S0_}]:=Module[{a,M=1,r,ut, Jump0, Jump1},
+a=ODspin[OD];
+r=ODperiapsis[OD];
+
+ut=(a^3+(-2+r) r^(5/2)+a r (-2 M+r)+a^2 Sqrt[r] (-2+2 M+r))/(Sqrt[1+(2 a)/r^(3/2)-3/r] r^(3/2) (a^2+r (-2 M+r)));
+Jump0=0;
+Jump1=-16*\[Pi]/(ut*(a^2+(-2+r) r))*S0;
+Return[{hj0->Jump0,hj1->Jump1}]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Spin 1 and \[Kappa]*)
+
+
+CalcJumps\[Kappa]s1[
+{\[Kappa]j0_Symbol,\[Kappa]j1_Symbol,Pm1j0_Symbol,Pm1j1_Symbol},
+OD_OrbitalData?CircularEquatorialQ, 
+{lmax0_,mm0_},
+{
+{Pm2j0_,Pm2j1_,s2jumps_},
+{hj0_,hj1_,s0jumps_},
+{dhlplp_Symbol,dhlmlm_Symbol,dhmpmp_Symbol,dhmmmm_Symbol,d\[Rho]chlpmm_Symbol,sourcetermsubs_}
+},
+{Bmatm2_,Bmatm1_,Bmat0_,Bmatp1_,Bmatp2_},
+{eigs0_,eigs1_,eigs2_},
+{\[Gamma]mat_},
+opts:OptionsPattern[]]:=Module[
+{
+mm,ll,
+r,\[Theta],l,m,a,\[Omega],a\[Omega]0,lmax,M,\[CapitalDelta],K,
+a0,\[Omega]0,\[CapitalOmega]0,r0,
+\[Lambda],\[Lambda]0,\[CapitalLambda],\[Gamma]ll,sgn,
+CC,BB,AA,\[Alpha]sq,
+Pp2,Pm2,Pp1,Pm1,h,h0,\[Kappa],Sm2,Sp2,Sm1,Sp1,S0,
+h0subs,\[Kappa]subs,h0tohrepl,
+teuks1subs,teuks2subs,
+Pm1subs,Pp2subs,Pm2subs,
+\[CapitalDelta]Ksimp,\[CapitalDelta]subs,Ksubs,
+Dop,Ddag,
+hvec,\[Kappa]mat,Pp1vec,Pm1vec,Pm2vec,Pp2vec,Pp2lrepl,Pp1lrepl,Pp2repl,Pp1repl,
+ones,
+knowns,unknowns,unknownstozero,sol,Mmat,brhs,eqs,
+hj0lplp,hs0j0lplp,hs1j0lplp,hs2j0lplp,hj0mpmp,hs0j0mpmp,hs1j0mpmp,hs2j0mpmp,hj1lplp,hs0j1lplp,hs1j1lplp,hs2j1lplp,sourcehlplp,hj1mpmp,hs0j1mpmp,hs1j1mpmp,hs2j1mpmp,sourcehmpmp,hj0lmlm,hs0j0lmlm,hs1j0lmlm,hs2j0lmlm,
+hj0mmmm,hs0j0mmmm,hs1j0mmmm,hs2j0mmmm,hj1lmlm,hs0j1lmlm,hs1j1lmlm,hs2j1lmlm,sourcehlmlm,hj1mmmm,hs0j1mmmm,hs1j1mmmm,hs2j1mmmm,sourcehmmmm,\[Rho]chj0lpmm,\[Rho]chs0j0lpmm,\[Rho]chs1j0lpmm,\[Rho]chs2j0lpmm, \[Rho]hj0lpmp,\[Rho]hs0j0lpmp,\[Rho]hs1j0lpmp,\[Rho]hs2j0lpmp,
+lmins2,lmins1,lmins0,
+\[Rho]chs2lpmm,\[Rho]chs1lpmm,\[Rho]chs0lpmm,
+\[Rho]hs2lpmp,\[Rho]hs1lpmp,\[Rho]hs0lpmp,
+hs2mmmm,hs2lmlm,hs1mmmm,hs1lmlm,hs0mmmm,hs0lmlm,
+hs2mpmp,hs2lplp,hs1mpmp,hs1lplp,hs0mpmp,hs0lplp,
+hlsubs,\[Kappa]lsubs,hjump,\[Kappa]jump,\[CapitalDelta]Kr0subs,awsubs,\[Gamma]llsubs,
+Pm1jump,Pm2jump,Pm1lsubs,Pm2lsubs,Pp2lsubs,
+DPm2vec,DDPm2vec,DDDPm2vec,
+DdagPp2vec,DdagDdagPp2vec,DopDdagDdagPp2vec,
+SSminus,SSplus,
+HeadFn,
+BBrepl,Crepl0,AArepl
+},
+
+HeadFn[head_,ll_]:={head[r]->head[ll][r],head'[r]->head[ll]'[r],head''[r]->head[ll]''[r],head'''[r]->head[ll]'''[r],head''''[r]->head[ll]''''[r]};
+
+\[CapitalDelta]subs={\[CapitalDelta][r]->r^2-2*M*r+a^2,\[CapitalDelta]'[r]->2*(r-M),\[CapitalDelta]''[r]->2,\[CapitalDelta]'''[r]->0};
+Ksubs={K[r]->\[Omega]*(r^2+a^2)-a*m,K'[r]-> 2*\[Omega]*r,K''[r]->2*\[Omega],K'''[r]->0};
+\[CapitalDelta]Ksimp={\[CapitalDelta]'[r]->2*(r-M),\[CapitalDelta]''[r]->2,\[CapitalDelta]'''[r]->0,K'[r]-> 2*\[Omega]*r,K''[r]->2*\[Omega],K'''[r]->0};
+
+Dop[n_,R_]:=D[R,r]-I*K[r]/\[CapitalDelta][r]*R+n*\[CapitalDelta]'[r]/\[CapitalDelta][r]*R;
+Ddag[n_,R_]:=D[R,r]+I*K[r]/\[CapitalDelta][r]*R+n*\[CapitalDelta]'[r]/\[CapitalDelta][r]*R;
+Dop[R_]:=Dop[0,R];
+Ddag[R_]:=Ddag[0,R];
+
+(* Teuksolky equations for spin 2 *)
+teuks2subs=DefTeukSubs[2,{Pm2,Pp2,Sm2,Sp2},{\[CapitalDelta],K},{M,a,m,\[Omega],\[CapitalLambda]},{r,\[Theta]}];
+Pm2subs=teuks2subs[[1;;3]];
+Pp2subs=teuks2subs[[4;;6]];
+
+(* Teukolsky-Starobinskii identities for spin 2 *)
+Pp2repl=DefTSIP[2,"pm",{Pm2,Pp2},{\[CapitalDelta],K},{M,a,m,\[Omega],\[CapitalLambda],CC},{r}];
+
+(* Teukolsky equations for spin 1. *)
+teuks1subs=DefTeukSubs[1,{Pm1,Pp1,Sm1,Sp1},{\[CapitalDelta],K},{M,a,m,\[Omega],\[Lambda]},{r,\[Theta]}];
+Pm1subs=teuks1subs[[1;;3]];
+
+(* Teukolsky-Starobinskii identities for spin 1. *)
+Pp1repl=DefTSIP[1,"pm",{Pm1,Pp1},{\[CapitalDelta],K},{M,a,m,\[Omega],\[Lambda],BB},{r}];
+
+(* Teukolsky equations for trace, and for kappa. *)
+h0subs=DefTeukSubs[0,{h0,S0},{\[CapitalDelta],K},{M,a,m,\[Omega],\[Lambda]0},{r,\[Theta]}][[1;;3]];
+
+a0=ODspin[OD];
+If[PossibleZeroQ[a0],a0=0]; (* In the Schwarzschild case, a0 should be the integer zero. *)
+r0=ODsemilatusrectum[OD];
+lmax=lmax0;
+mm=mm0;
+
+
+\[CapitalOmega]0=KerrAzimuthalFrequency[OD];
+\[Omega]0=mm \[CapitalOmega]0;
+a\[Omega]0=If[a0==0,0,a0*\[Omega]0];
+\[CapitalDelta]Kr0subs=Map[#[[1]]->(#[[2]]/.{a->a0,r->r0,M->1,m->mm,\[Omega]->\[Omega]0})&,Join[\[CapitalDelta]subs,Ksubs]];
+awsubs=Join[{a->a0,\[Omega]->\[Omega]0},{m->mm,M->1}];
+lmins0=Abs[mm];
+lmins1=Max[1,Abs[mm]];
+lmins2=Max[2,Abs[mm]];
+
+(* Radial functions as vectors. *)
+ones=Table[1,{ll,0,lmax}];
+Pp2vec=Table[If[ll>=lmins2,Pp2[ll][r],0],{ll,0,lmax}];
+Pp1vec=Table[If[ll>=lmins1,Pp1[ll][r],0],{ll,0,lmax}];
+hvec=Table[If[ll>=lmins0,h[ll][r],0],{ll,0,lmax}];
+Pm1vec=Table[If[ll>=lmins1,Pm1[ll][r],0],{ll,0,lmax}];
+Pm2vec=Table[If[ll>=lmins2,Pm2[ll][r],0],{ll,0,lmax}];
+
+(* \[Kappa] needs special handling *)
+Module[{tmp1,tmp2},
+tmp1=DiagonalMatrix[Table[If[ll>=lmins0,\[Kappa][ll][r],0],{ll,0,lmax}]];
+tmp2=a^2*Table[
+If[j!=k,
+If[j>=lmins0&&k>=lmins0,
+\[Gamma]mat[[j+1,k+1]]*h[j][r]/(2*(eigs0[[j+1]]-eigs0[[k+1]]))
+,
+0
+],
+0],
+{j,0,lmax},{k,0,lmax}];
+\[Kappa]mat=(tmp1+tmp2)/.awsubs;
+];
+
+(* Awkwardness: to keep the expressions compact, I would like to replace 'r' with the numerical value 'r0', but not in the radial functions themselves, as these I will use as unknowns. So I will replace the radial functions with jump expressions at an early stage. *)
+
+Pm2jump=Table[If[ll>=lmins2,{Pm2[ll][r]->Pm2j0[ll],Pm2[ll]'[r]->Pm2j1[ll]},{}],{ll,0,lmax}]//Flatten;
+
+Pm1jump=Table[If[ll>=lmins1,{Pm1[ll][r]->Pm1j0[ll],Pm1[ll]'[r]->Pm1j1[ll]},{}],{ll,0,lmax}]//Flatten;
+hjump=Table[If[ll>=lmins0,{h[ll][r]->0,h[ll]'[r]->hj1[ll]},{}],{ll,0,lmax}]//Flatten;
+\[Kappa]jump=Table[If[ll>=lmins0,{\[Kappa][ll][r]->\[Kappa]j0[ll],\[Kappa][ll]'[r]->\[Kappa]j1[ll]},{}],{ll,0,lmax}]//Flatten;
+
+
+
+\[Kappa]subs=DefTeukSubs["\[Kappa]",{\[Kappa],h},{\[CapitalDelta],K},{M,a,m,\[Omega],\[Lambda]0,\[Gamma]ll[l]},{r}];
+(*mat=CosMixMatrix[0,2,lmax,mm];*)
+\[Gamma]llsubs=Table[\[Gamma]ll[ll]->\[Gamma]mat[[ll+1,ll+1]],{ll,0,lmax}];
+
+(* 
+  Now we need replacement rules from the Teukolsky and Teukolsky-Starobinskii equations, on an industrial scale.
+Remember the (-1)^(l+m) factor in the TS identities for spin 2.
+*)
+(* First the Teukolsky equations *)
+Clear[ll];
+h0tohrepl={h0[r]->h[r],h0'[r]->h'[r],h0''[r]->h''[r],h0'''[r]->h'''[r],h0''''[r]->h''''[r]};
+Pm2lsubs= Table[Pm2subs/.awsubs/.{\[CapitalLambda]->eigs2[[ll+1]]}/.HeadFn[Pm2,ll],{ll,lmins2,lmax}]//Flatten;
+Pp2lsubs= Table[Pp2subs/.awsubs/.{\[CapitalLambda]->eigs2[[ll+1]]}/.HeadFn[Pp2,ll],{ll,lmins2,lmax}]//Flatten;
+Pm1lsubs= Table[Pm1subs/.awsubs/.{\[Lambda]->eigs1[[ll+1]]}/.HeadFn[Pm1,ll],{ll,lmins1,lmax}]//Flatten;
+(*Pp1lsubs= Table[Pp1subs/.awsubs/.{\[Lambda]->eigs1[[ll+1]]}/.HeadFn[Pp1,ll],{ll,lmins1,lmax}]//Flatten;*)
+hlsubs= Table[h0subs/.awsubs/.{\[Lambda]0->eigs0[[ll+1]]}/.h0tohrepl/.HeadFn[h,ll],{ll,lmins0,lmax}]//Flatten;
+\[Kappa]lsubs= Table[\[Kappa]subs/.awsubs/.{\[Lambda]0->eigs0[[ll+1]]}/.{l->ll}/.h0tohrepl/.HeadFn[\[Kappa],ll]/.HeadFn[h,ll],{ll,lmins0,lmax}]//Flatten;
+
+(* Now consider the Teuksolsky-Starobinskii identities *)
+AArepl={AA->Sqrt[\[CapitalLambda]^2*(\[CapitalLambda]+2)^2-8*\[Omega]^2*\[CapitalLambda]*(\[Alpha]sq*(5*\[CapitalLambda]+6)-12*a^2)+144*\[Omega]^4*\[Alpha]sq^2]}/.{\[Alpha]sq->a^2-a*m/\[Omega]};
+(* Check against Pound and Wardell. *)
+BBrepl={BB->Sqrt[\[Lambda]^2 +4*a*m*\[Omega]-4*a^2*\[Omega]^2 ]};
+Crepl0={CC->AA+12 I M sgn \[Omega],Cstar->AA-12 I M sgn \[Omega]};
+Clear[ll];
+
+
+Pp2lrepl=Table[Pp2repl/.awsubs/.HeadFn[Pm2,ll]/.HeadFn[Pp2,ll]/.Crepl0/.AArepl/.{\[CapitalLambda]->eigs2[[ll+1]]}/.{sgn->(-1)^(ll+mm)}/.awsubs,{ll,lmins2,lmax}]//Flatten;
+Pp1lrepl=Table[Pp1repl/.awsubs/.HeadFn[Pm1,ll]/.HeadFn[Pp1,ll]/.BBrepl/.{\[Lambda]->eigs1[[ll+1]]}/.awsubs,{ll,lmins1,lmax}]//Flatten;
+
+(* Spin 1 projections. *)
+(* I have deleted all the projections except lplp, mpmp, lmlm, mmmm and rho h_{lpmp} and rhoc h_{lpmm} *)
+EchoTiming[
+Module[{line1,line2,tmp,tmp1,tmp2,SS0,calPs1,DcalPs1,sinmix,cosmix,hraws1mmmm,hraws1mpmp,hraws1lmlm,hraws1lplp,Ss1mmmm,Ss1mpmp,Ss1lmlm,Ss1lplp,t0,t1},
+t0=-(Bmatm1+signmat[lmax,mm] . Bmatp1) . \[Lambda]hat[lmax,mm];
+t1=a\[Omega]0*(Bmatm1 . SinMixMatrix[-1,0,lmax,mm]+signmat[lmax,mm] . Bmatp1 . SinMixMatrix[1,0,lmax,mm]);
+SS0=t0+t1;
+Ss1lplp=SS0;
+Ss1lmlm=SS0;
+Ss1mpmp=Bmatp1 . (-\[Lambda]2hat[lmax,mm]+a\[Omega]0*SinMixMatrix[1,2,lmax,mm]);
+Ss1mmmm=Bmatm1 . (\[Lambda]2hat[lmax,mm]-a\[Omega]0*SinMixMatrix[-1,-2,lmax,mm]);
+tmp=2/\[CapitalDelta][r]*Table[Dop[-1,Pp1vec[[ll+1]]],{ll,0,lmax}];
+hraws1lplp=tmp . signmat[lmax,mm] . Ss1lplp;  (* zzz edited line *)
+hs1lplp=hraws1lplp/.Pp1lrepl/.awsubs;
+tmp=2/\[CapitalDelta][r]*Table[Ddag[-1,Pm1vec[[ll+1]]],{ll,0,lmax}];
+hraws1lmlm=tmp . Ss1lmlm;
+hs1lmlm=hraws1lmlm/.awsubs;
+tmp1=signmat[lmax,mm] . Table[Ddag[Pp1vec[[ll+1]]],{ll,0,lmax}]/.Pp1lrepl/.awsubs;
+tmp2=Table[Dop[Pm1vec[[ll+1]]],{ll,0,lmax}]/.awsubs;
+tmp=2*(tmp1+tmp2);
+hraws1mpmp=tmp . signmat[lmax,mm] . Ss1mpmp;  
+hraws1mmmm=-tmp . Ss1mmmm;
+hs1mpmp=hraws1mpmp/.Pp1lrepl/.awsubs;
+hs1mmmm=hraws1mmmm/.Pp1lrepl/.awsubs;
+(* Now for the other components *)
+tmp1=signmat[lmax,mm] . Table[Ddag[Pp1vec[[ll+1]]],{ll,0,lmax}]/.Pp1lrepl/.awsubs;
+tmp2=Table[Dop[Pm1vec[[ll+1]]],{ll,0,lmax}]/.awsubs;
+calPs1=tmp2+tmp1;
+DcalPs1=Map[Dop,calPs1]/.Pm1lsubs;
+(* Ss1lplp//TableForm *)
+(* l+ m+ *)
+cosmix=CosMixMatrix[1,1,lmax,mm];
+sinmix=SinMixMatrix[0,1,lmax,mm];
+line1=(signmat[lmax,mm] . (r*DcalPs1-2*calPs1)) . Bmatp1+I*a*(signmat[lmax,mm] . DcalPs1) . Bmatp1 . cosmix/.Pm1lsubs;
+tmp1=1/\[CapitalDelta][r]*signmat[lmax,mm] . Pp1vec/.Pp1lrepl/.awsubs;
+tmp2=-r*\[Lambda]hat[lmax,mm]-I*a*\[Lambda]hat[lmax,mm] . cosmix+(a*\[Omega]*r+2*I*a)*sinmix+I*a^2*\[Omega]*sinmix . cosmix;
+line2=tmp1 . SS0 . tmp2;
+\[Rho]hs1lpmp=(line1+line2)/.awsubs;
+(* Now the \[Rho]c h_{l+ m-} term *)
+line1=-(r*DcalPs1-2*calPs1) . Bmatm1+I*a*DcalPs1 . Bmatm1 . CosMixMatrix[-1,1,lmax,mm]/.Pm1lsubs;
+tmp1=1/\[CapitalDelta][r]*signmat[lmax,mm] . Pp1vec/.Pp1lrepl/.awsubs;
+tmp2=r*\[Lambda]hat[lmax,mm]-I*a*\[Lambda]hat[lmax,mm] . CosMixMatrix[-1,1,lmax,mm]-(a*\[Omega]*r+2*I*a)*SinMixMatrix[0,-1,lmax,mm]+I*a^2*\[Omega]*SinMixMatrix[0,-1,lmax,mm] . CosMixMatrix[-1,1,lmax,mm];
+line2=tmp1 . SS0 . tmp2;
+\[Rho]chs1lpmm=(line1+line2)/.awsubs;
+]
+];
+(* Spin 2: lplp and mpmp *)
+EchoTiming[
+Module[{hraws2mmmm,hraws2mpmp,hraws2lmlm,hraws2lplp,tmp,tmp1,tmp2,Ss2mmmm,Ss2mpmp,Ss2lmlm,Ss2lplp ,t0,t1},
+t0=Bmatp2 . (\[CapitalLambda]hat[lmax,mm]-2*a\[Omega]0*\[Lambda]2hat[lmax,mm] . SinMixMatrix[1,0,lmax,mm]+a\[Omega]0^2*SinMixMatrix[2,0,lmax,mm]);
+t1=signmat[lmax,mm] . Bmatm2 . (\[CapitalLambda]hat[lmax,mm]-2*a\[Omega]0*\[Lambda]2hat[lmax,mm] . SinMixMatrix[-1,0,lmax,mm]+a\[Omega]0^2*SinMixMatrix[-2,0,lmax,mm]);
+Ss2lplp=t0+t1;
+Ss2lmlm=signmat[lmax,mm] . Ss2lplp; 
+Ss2mpmp=Bmatp2;
+Ss2mmmm=signmat[lmax,mm] . Bmatm2;
+hraws2lplp=-1/(6*\[Omega]^2*\[CapitalDelta][r]^2)*Pp2vec . Ss2lplp;
+hraws2lmlm=-1/(6*\[Omega]^2*\[CapitalDelta][r]^2)*Pm2vec . Ss2lmlm;
+hs2lplp=hraws2lplp/.awsubs/.Pp2lrepl;
+hs2lmlm=hraws2lmlm/.awsubs;
+tmp1=Table[Ddag[Ddag[Pp2vec[[ll+1]]]],{ll,0,lmax}];
+tmp2=signmat[lmax,mm] . Table[Dop[Dop[Pm2vec[[ll+1]]]],{ll,0,lmax}];
+tmp=-1/(6*\[Omega]^2)*(tmp1+tmp2);
+hraws2mpmp=tmp . Ss2mpmp;
+hraws2mmmm=tmp . Ss2mmmm;
+hs2mpmp=hraws2mpmp/.Pp2lsubs/.Pp2lrepl/.Pm2lsubs/.awsubs;
+hs2mmmm=hraws2mmmm/.Pp2lsubs/.Pp2lrepl/.Pm2lsubs/.awsubs;
+]
+];
+EchoTiming[
+SSplus=(Bmatp2 . (\[CapitalLambda]hat[lmax,mm]-2*a*\[Omega]*\[Lambda]2hat[lmax,mm] . SinMixMatrix[1,0,lmax,mm]+a^2*\[Omega]^2*SinMixMatrix[2,0,lmax,mm]))/.awsubs//Simplify;
+SSminus=(Bmatm2 . (\[CapitalLambda]hat[lmax,mm]-2*a*\[Omega]*\[Lambda]2hat[lmax,mm] . SinMixMatrix[-1,0,lmax,mm]+a^2*\[Omega]^2*SinMixMatrix[-2,0,lmax,mm]))/.awsubs//Simplify;
+DdagPp2vec=Map[Ddag,Pp2vec]/.Pp2lrepl/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
+DdagDdagPp2vec=Map[Ddag,DdagPp2vec]/.Pm2lsubs/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
+(*DdagDdagDdagPp2vec=Map[Ddag,DdagDdagPp2vec]/.Pm2lsubs/.\[CapitalDelta]Ksimp/.awsubs//Simplify;*)
+DPm2vec=Map[Dop,Pm2vec]/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
+DDPm2vec=Map[Dop,DPm2vec]/.Pm2lsubs/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
+DDDPm2vec=Map[Dop,DDPm2vec]/.Pm2lsubs/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
+DopDdagDdagPp2vec=Map[Dop,DdagDdagPp2vec]/.Pm2lsubs/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
+(*DdagDDPm2vec=Map[Ddag,DDPm2vec]/.Pm2lsubs/.\[CapitalDelta]Ksimp/.awsubs//Simplify;*)
+];
+(* lp mp *)
+EchoTiming[
+Module[{term1,term2,term3,term4,tmp,MMp2,MMm2,\[Rho]cmat,sinmix1m1,sinmix,cosmix,\[Rho]mat},
+cosmix=CosMixMatrix[1,1,lmax,mm];
+sinmix=SinMixMatrix[0,1,lmax,mm];
+sinmix1m1=SinMixMatrix[-1,1,lmax,mm];
+\[Rho]mat=r*idmat[lmax,mm]+I*a*cosmix;
+MMp2=Bmatp2 . (\[Lambda]2hat[lmax,mm]-a*\[Omega]*SinMixMatrix[2,1,lmax,mm])/.awsubs;
+MMm2=Bmatm2 . (\[Lambda]2hat[lmax,mm]-a*\[Omega]*SinMixMatrix[-2,-1,lmax,mm])/.awsubs;
+term1=1/(12*\[Omega]^2)*(DDPm2vec . signmat[lmax,mm] . SSplus-DdagDdagPp2vec . signmat[lmax,mm] . SSminus) . (\[Lambda]hat[lmax,mm]-a*\[Omega]*sinmix)/.awsubs;
+term2=-1/(12*\[Omega]^2)*(DDDPm2vec . signmat[lmax,mm] . SSplus-DopDdagDdagPp2vec . signmat[lmax,mm] . SSminus) . ((\[Lambda]hat[lmax,mm]-a*\[Omega]*sinmix) . \[Rho]mat-I*a*sinmix)/.awsubs;
+term3=-1/(3*I*\[Omega])*(DDDPm2vec . signmat[lmax,mm] . MMp2 . \[Rho]mat . \[Rho]mat-2*DDPm2vec . signmat[lmax,mm] . MMp2 . \[Rho]mat+2*DPm2vec . signmat[lmax,mm] . MMp2)/.awsubs;
+tmp=(\[Lambda]hat[lmax,mm] . \[Lambda]hat[lmax,mm]-2*a*\[Omega]*\[Lambda]hat[lmax,mm] . sinmix+a^2*\[Omega]^2*sinmix1m1) . \[Rho]mat . \[Rho]mat-2*I*a*(\[Lambda]hat[lmax,mm] . sinmix-a*\[Omega]*sinmix1m1) . \[Rho]mat-2*a^2*sinmix1m1;
+term4=-1/(3*I*\[Omega]*\[CapitalDelta][r])*DdagPp2vec . (signmat[lmax,mm] . MMm2 . tmp)/.awsubs;
+(* Don't forget the \[Beta] factor. *)
+tmp=term1+term2+term3+term4;
+\[Rho]hs2lpmp=(tmp/(-6*I*M*\[Omega]))/.awsubs;
+]
+];
+(* lp mm *)
+EchoTiming[
+Module[{term1,term2,term3,term4,tmp,MMp2,MMm2,\[Rho]cmat,sinmix1m1,sinmix},
+\[Rho]cmat=r*idmat[lmax,mm]-I*a*CosMixMatrix[-1,1,lmax,mm];
+sinmix=SinMixMatrix[0,-1,lmax,mm];
+MMp2=Bmatp2 . (\[Lambda]2hat[lmax,mm]-a*\[Omega]*SinMixMatrix[2,1,lmax,mm]);
+MMm2=Bmatm2 . (\[Lambda]2hat[lmax,mm]-a*\[Omega]*SinMixMatrix[-2,-1,lmax,mm]);
+term1=-1/(12*\[Omega]^2)*(DDPm2vec . SSminus-DdagDdagPp2vec . SSplus) . (\[Lambda]hat[lmax,mm]-a*\[Omega]*sinmix);
+term2=1/(12*\[Omega]^2)*(DDDPm2vec . SSminus-DopDdagDdagPp2vec . SSplus) . ((\[Lambda]hat[lmax,mm]-a*\[Omega]*sinmix) . \[Rho]cmat-I*a*sinmix);
+term3=1/(3*I*\[Omega])*(DDDPm2vec . MMm2 . \[Rho]cmat . \[Rho]cmat-2*DDPm2vec . MMm2 . \[Rho]cmat+2*DPm2vec . MMm2);
+sinmix1m1=SinMixMatrix[1,-1,lmax,mm];
+tmp=(\[Lambda]hat[lmax,mm] . \[Lambda]hat[lmax,mm]-2*a*\[Omega]*\[Lambda]hat[lmax,mm] . sinmix+a^2*\[Omega]^2*sinmix1m1) . \[Rho]cmat . \[Rho]cmat-2*I*a*(\[Lambda]hat[lmax,mm] . sinmix-a*\[Omega]*sinmix1m1) . \[Rho]cmat-2*a^2*sinmix1m1;
+term4=1/(3*I*\[Omega]*\[CapitalDelta][r])*DdagPp2vec . MMp2 . tmp;
+tmp=term1+term2+term3+term4;
+\[Rho]chs2lpmm=(tmp/(-6*I*M*\[Omega]))/.awsubs;
+]
+];
+
+(* Spin 0 *)
+(* When we apply \[Kappa]lsubs, we also should fill in the \[Gamma]ll values *)
+EchoTiming[
+Module[{tmp1,tmp2a,tmp2,Dhvec,D\[Kappa]mat,MM0,sinmix,cosmix,t0,t1,tmpS\[Kappa],tmpSh},
+tmp1=-1/(I*\[Omega])*Dop[r*Dop[hvec]] . Bmat0/.hlsubs/.awsubs;
+tmp2a=(ones . Dop[Dop[\[Kappa]mat]]) . Bmat0/.\[Kappa]lsubs/.\[Gamma]llsubs/.hlsubs/.awsubs;
+tmp2=-4*tmp2a/.awsubs;
+hs0lplp=(tmp1+tmp2)/.awsubs;
+
+tmp1=1/(I*\[Omega])*Ddag[r*Ddag[hvec]] . Bmat0/.hlsubs/.awsubs;
+tmp2a=(ones . Ddag[Ddag[\[Kappa]mat]]) . Bmat0/.\[Kappa]lsubs/.\[Gamma]llsubs/.hlsubs/.awsubs;
+tmp2=-4*tmp2a/.awsubs;
+hs0lmlm=(tmp1+tmp2)/.awsubs;
+
+t0=Bmat0 . (\[CapitalLambda]hat[lmax,mm]-2*a\[Omega]0*\[Lambda]hat[lmax,mm] . SinMixMatrix[1,2,lmax,mm]+a\[Omega]0^2*SinMixMatrix[0,2,lmax,mm]) . CosMixMatrix[2,1,lmax,mm];
+t1=Bmat0 . (\[Lambda]hat[lmax,mm] . SinMixMatrix[1,2,lmax,mm]-a\[Omega]0*SinMixMatrix[0,2,lmax,mm]);
+tmpSh=(t0+t1)/.awsubs;
+tmpS\[Kappa]=Bmat0 . (\[CapitalLambda]hat[lmax,mm]-2*a\[Omega]0*\[Lambda]hat[lmax,mm] . SinMixMatrix[1,2,lmax,mm]+a\[Omega]0^2*SinMixMatrix[0,2,lmax,mm])/.awsubs;
+hs0mpmp=((a/\[Omega])*hvec . tmpSh-4*(ones . \[Kappa]mat) . tmpS\[Kappa])/.awsubs;
+
+t0=Bmat0 . (\[CapitalLambda]hat[lmax,mm]-2*a\[Omega]0*\[Lambda]hat[lmax,mm] . SinMixMatrix[-1,-2,lmax,mm]+a\[Omega]0^2*SinMixMatrix[0,-2,lmax,mm]) . CosMixMatrix[-2,1,lmax,mm];
+t1=-Bmat0 . (\[Lambda]hat[lmax,mm] . SinMixMatrix[-1,-2,lmax,mm]-a\[Omega]0*SinMixMatrix[0,-2,lmax,mm]);
+tmpSh=(t0+t1)/.awsubs;
+tmpS\[Kappa]=Bmat0 . (\[CapitalLambda]hat[lmax,mm]-2*a\[Omega]0*\[Lambda]hat[lmax,mm] . SinMixMatrix[-1,-2,lmax,mm]+a\[Omega]0^2*SinMixMatrix[0,-2,lmax,mm])/.awsubs;
+hs0mmmm=(-(a/\[Omega])*hvec . tmpSh-4*(ones . \[Kappa]mat) . tmpS\[Kappa])/.awsubs;
+]
+];
+
+(* lp mp *)
+EchoTiming[
+Module[{term1,term2,term3,term4,tmp,Dhvec,D\[Kappa]mat,MM0,sinmix,cosmix,t0},
+t0=r^2*idmat[lmax,mm]+a^2*CosMixMatrix[1,2,lmax,mm];
+sinmix=SinMixMatrix[0,1,lmax,mm];
+cosmix=CosMixMatrix[1,1,lmax,mm];
+MM0=\[Lambda]hat[lmax,mm]-a*\[Omega]*sinmix;
+Dhvec=Map[Dop,hvec];
+D\[Kappa]mat=Map[Dop,\[Kappa]mat];
+term1=1/(2*I*\[Omega])*Dhvec . Bmat0 . MM0 . t0;
+term2=-a/\[Omega]*(r*Dhvec . Bmat0 . sinmix-hvec . Bmat0 . MM0 . cosmix);
+tmp=r*idmat[lmax,mm]+I*a*cosmix;
+term3=4*(ones . D\[Kappa]mat) . Bmat0 . MM0 . tmp;
+term4=-4*((ones . \[Kappa]mat) . Bmat0 . MM0+I*a*(ones . D\[Kappa]mat) . Bmat0 . sinmix);
+\[Rho]hs0lpmp=(term1+term2+term3+term4)/.awsubs;
+]
+];
+
+(* lp mm *)
+EchoTiming[
+Module[{term1,term2,term3,term4,tmp,Dhvec,D\[Kappa]mat,MM0,sinmix,t0},
+t0=r^2*idmat[lmax,mm]+a^2*CosMixMatrix[-1,2,lmax,mm];
+sinmix=SinMixMatrix[0,-1,lmax,mm];
+MM0=\[Lambda]hat[lmax,mm]-a*\[Omega]*sinmix;
+Dhvec=Map[Dop,hvec];
+D\[Kappa]mat=Map[Dop,\[Kappa]mat];
+term1=-1/(2*I*\[Omega])*Dhvec . Bmat0 . MM0 . t0;
+term2=a/\[Omega]*(r*Dhvec . Bmat0 . sinmix+hvec . Bmat0 . MM0 . CosMixMatrix[-1,1,lmax,mm]);
+tmp=r*idmat[lmax,mm]-I*a*CosMixMatrix[-1,1,lmax,mm];
+term3=-4*((ones . D\[Kappa]mat) . Bmat0 . MM0 . tmp);
+term4=4*((ones . \[Kappa]mat) . Bmat0 . MM0+I*a*(ones . D\[Kappa]mat) . Bmat0 . sinmix);
+\[Rho]chs0lpmm=(term1+term2+term3+term4)/.awsubs;
+]
+];
+
+(* Spin 0, 1 and spin 2. *)
+(* lp-lp and mp-mp components. *)
+EchoTiming[
+hs0j0lplp=hs0lplp/.hlsubs/.\[Kappa]lsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
+hs0j1lplp=D[hs0lplp,r]/.hlsubs/.\[Kappa]lsubs/.\[Gamma]llsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
+hs0j0mpmp=hs0mpmp/.hlsubs/.\[Kappa]lsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
+hs0j1mpmp=D[hs0mpmp,r]/.hlsubs/.\[Kappa]lsubs/.\[Gamma]llsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
+hs1j0lplp=hs1lplp/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs1j1lplp=D[hs1lplp,r]/.Pm1lsubs/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs1j0mpmp=hs1mpmp/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs1j1mpmp=D[hs1mpmp,r]/.Pm1lsubs/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs2j0lplp=hs2lplp/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs2j1lplp=D[hs2lplp,r]/.Pm2lsubs/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs2j0mpmp=hs2mpmp/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs2j1mpmp=D[hs2mpmp,r]/.Pm2lsubs/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+];
+
+(* lmlm and mmmm components. *)
+EchoTiming[
+hs0j0lmlm=hs0lmlm/.hlsubs/.\[Kappa]lsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
+hs0j1lmlm=D[hs0lmlm,r]/.hlsubs/.\[Kappa]lsubs/.\[Gamma]llsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
+hs0j0mmmm=hs0mmmm/.hlsubs/.\[Kappa]lsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
+hs0j1mmmm=D[hs0mmmm,r]/.hlsubs/.\[Kappa]lsubs/.\[Gamma]llsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
+hs1j0lmlm=hs1lmlm/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs1j1lmlm=D[hs1lmlm,r]/.Pm1lsubs/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs1j0mmmm=hs1mmmm/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs1j1mmmm=D[hs1mmmm,r]/.Pm1lsubs/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs2j0lmlm=hs2lmlm/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs2j1lmlm=D[hs2lmlm,r]/.Pm2lsubs/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs2j0mmmm=hs2mmmm/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+hs2j1mmmm=D[hs2mmmm,r]/.Pm2lsubs/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+];
+
+(* \[Rho]lpmp and \[Rho]clpmm. *)
+EchoTiming[
+\[Rho]hs0j0lpmp=(\[Rho]hs0lpmp)/.hlsubs/.\[Kappa]lsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
+\[Rho]hs1j0lpmp=(\[Rho]hs1lpmp)/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+\[Rho]hs2j0lpmp=(\[Rho]hs2lpmp)/.Pm2lsubs/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+];
+
+EchoTiming[
+\[Rho]chs0j0lpmm=(\[Rho]chs0lpmm)/.hlsubs/.\[Kappa]lsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
+\[Rho]chs1j0lpmm=(\[Rho]chs1lpmm)/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+\[Rho]chs2j0lpmm=(\[Rho]chs2lpmm)/.Pm2lsubs/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
+];
+
+sourcehlplp=Table[dhlplp[ll],{ll,0,lmax}]/.sourcetermsubs;
+sourcehlmlm=Table[dhlmlm[ll],{ll,0,lmax}]/.sourcetermsubs;
+sourcehmpmp=Table[dhmpmp[ll],{ll,0,lmax}]/.sourcetermsubs;
+sourcehmmmm=Table[dhmmmm[ll],{ll,0,lmax}]/.sourcetermsubs;
+(*source\[Rho]chlpmm=Table[d\[Rho]chlpmm[ll],{ll,0,lmax}]/.sourcetermsubs;*)
+(* OK, let's check out whether the linear system of equations has a solution, in principle. *)
+(* We are solving for the unknowns: *)
+
+unknowns=Join[Table[Pm1j0[ll],{ll,lmins1,lmax}],Table[Pm1j1[ll],{ll,lmins1,lmax}],Table[\[Kappa]j0[ll],{ll,lmins0,lmax}],Table[\[Kappa]j1[ll],{ll,lmins0,lmax}]];
+unknownstozero=Table[unknowns[[kk]]->0,{kk,1,Length[unknowns]}];
+
+(* We have the system of equations: *)
+hj0lplp=hs0j0lplp+hs1j0lplp+hs2j0lplp;
+hj0mpmp=hs0j0mpmp+hs1j0mpmp+hs2j0mpmp;
+hj1lplp=(hs0j1lplp+hs1j1lplp+hs2j1lplp)-sourcehlplp;
+hj1mpmp=(hs0j1mpmp+hs1j1mpmp+hs2j1mpmp)-sourcehmpmp;
+
+hj0lmlm=hs0j0lmlm+hs1j0lmlm+hs2j0lmlm;
+hj0mmmm=hs0j0mmmm+hs1j0mmmm+hs2j0mmmm;
+hj1lmlm=(hs0j1lmlm+hs1j1lmlm+hs2j1lmlm)-sourcehlmlm; 
+hj1mmmm=(hs0j1mmmm+hs1j1mmmm+hs2j1mmmm)-sourcehmmmm;
+
+\[Rho]chj0lpmm=\[Rho]chs0j0lpmm+\[Rho]chs1j0lpmm+\[Rho]chs2j0lpmm; (*unnecessary?*)
+\[Rho]hj0lpmp=\[Rho]hs0j0lpmp+\[Rho]hs1j0lpmp+\[Rho]hs2j0lpmp;
+
+
+eqs=Join[
+	Table[hj0lplp[[ll+1]],{ll,lmins0,lmax}],
+	Table[hj1lplp[[ll+1]],{ll,lmins0,lmax}],
+	Table[hj0mpmp[[ll+1]],{ll,lmins2,lmax}],
+	Table[hj1mpmp[[ll+1]],{ll,lmins2,lmax}]
+	]/.s2jumps/.s0jumps;
+brhs=Table[CleanValue[-eqs[[kk]]/.unknownstozero],{kk,1,Length[eqs]}];
+
+(* For Abs[mm] != 1, the number of unknowns should equal the number of equations. However, for Abs[mm]=1, there are two more unknowns than equations,
+ and this case must be handled separately, using the spin-1 component of the metric perturbation. *)
+If[Abs[mm]==1,
+ll=1;
+(*eqs=Join[eqs,{\[Rho]chj0lpmm[[ll+1]],\[Rho]chj0lpmm[[ll+2]]}]/.s2jumps/.s0jumps;
+brhs=Table[CleanValue[-eqs[[kk]]/.unknownstozero],{kk,1,Length[eqs]}]//N;
+*)
+eqs=Join[eqs,{hj0lmlm[[ll+1]],hj1lmlm[[ll+1]]}]/.s2jumps/.s0jumps;
+brhs=Table[CleanValue[-eqs[[kk]]/.unknownstozero],{kk,1,Length[eqs]}]//N;
+];
+
+Mmat=CleanMatrix[Table[Coefficient[eqs[[j]],unknowns[[k]]],{j,1,Length[eqs]},{k,1,Length[eqs]}]];
+Det[Mmat];
+EchoTiming[Quiet[sol=LinearSolve[Mmat,brhs]],"LinearSolve for s1 and \[Kappa] jumps"];
+knowns=Table[unknowns[[k]]->CleanValue@sol[[k]],{k,1,Length[unknowns]}];
+Return[knowns]
+]
+
+
+(* ::Subsection:: *)
+(*h\[Kappa] Solver*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*inf series*)
+
+
+(* ::Input::Initialization:: *)
+h\[Kappa]infSeries[m_,a_,\[Omega]_,\[Lambda]0_,\[Gamma]ll_,r_, nmax_:10]:=
+Module[{h,\[Kappa],\[Alpha],\[Beta],\[Gamma],\[Delta],prefac,t1},
+h[n_]:=(h[n]=-(1/(\[Beta][2]n))Sum[h[i](i(i-1)\[Alpha][n+3-i]+i \[Beta][n+2-i]+\[Gamma][n+1-i]),{i,Max[0,n-5],n-1}]);
+\[Kappa][n_]:=(\[Kappa][n]=-(1/(\[Beta][2]n))(
+Sum[\[Kappa][i](i(i-1)\[Alpha][n+3-i]+i \[Beta][n+2-i]+\[Gamma][n+1-i]),{i,Max[-1,n-5],n-1}]+
++Sum[h[n+1-j]\[Delta][j],{j,0,Min[n+1,4]}])
+);
+h[0]=1;
+h[1]= (I (\[Lambda]0+2 (a m-4 \[Omega]) \[Omega]))/(2 \[Omega]);
+\[Kappa][-1]= 1/(4I \[Omega]);
+\[Kappa][0]=0;
+\[Kappa][1]=(2 (a m-4 \[Omega]+a^2 \[Omega])+I (a^2 \[Gamma]ll+h[2]))/(4 \[Omega]);
+\[Alpha][0]=0;
+\[Alpha][1]=0;
+\[Alpha][2]=0;
+\[Alpha][3]=0;
+\[Alpha][4]=1;
+\[Alpha][5]=-4;
+\[Alpha][6]=2 (2+a^2);
+\[Alpha][7]=-4 a^2;
+\[Alpha][8]=a^4;
+\[Alpha][n_]/;n>8:=0;
+\[Beta][0]=0;
+\[Beta][1]=0;
+\[Beta][2]=-2 I \[Omega];
+\[Beta][3]=2+4 I \[Omega];
+\[Beta][4]=-10-4 I (-2+a^2) \[Omega];
+\[Beta][5]=2 (6+3 a^2-8 I \[Omega]);
+\[Beta][6]=-2 I a^2 (-7 I+(-8+a^2) \[Omega]);
+\[Beta][7]=4 a^4 (1-I \[Omega]);
+\[Beta][n_]/;n>7:=0;
+\[Gamma][-1]=0;
+\[Gamma][0]=0;
+\[Gamma][1]=0;
+\[Gamma][2]=-\[Lambda]0-2 a m \[Omega]+8 \[Omega]^2;
+\[Gamma][3]=2 (-1+\[Lambda]0-I (-4+a^2) \[Omega]-2 a^2 \[Omega]^2);
+\[Gamma][4]=-2 a^3 m \[Omega]-4 (I+2 \[Omega])^2+a^2 (2+m^2-\[Lambda]0-2 I \[Omega]+8 \[Omega]^2);
+\[Gamma][5]=-2 a^2 (I+2 \[Omega]) (-3 I+(-4+a^2) \[Omega]);
+\[Gamma][6]=-2 a^4 (-1+3 I \[Omega]+2 \[Omega]^2);
+\[Gamma][n_]/;n>6:=0;
+\[Delta][0]=-1/2;
+\[Delta][1]=1;
+\[Delta][2]=-(1/2) a^2 (1+\[Gamma]ll);
+\[Delta][3]=a^2 \[Gamma]ll;
+\[Delta][4]=-((a^4 \[Gamma]ll)/2);
+\[Delta][n_]/;n>4:=0;
+prefac=2^(-2 I \[Omega]) E^(I r \[Omega]-(1-2 I \[Omega]) Log[r]);
+Return[{
+{t1=prefac Sum[h[n]r^-n,{n,0,nmax}], prefac Sum[-n h[n]r^(-n-1),{n,1,nmax}]+t1(-((1-2 I \[Omega])/r)+I \[Omega]), Abs[prefac h[nmax]/r^nmax]},
+{t1=prefac Sum[\[Kappa][n]r^-n,{n,-1,nmax}], prefac Sum[-n \[Kappa][n]r^(-n-1),{n,-1,nmax}]+t1(-((1-2 I \[Omega])/r)+I \[Omega]), Abs[prefac \[Kappa][nmax]/r^nmax]}
+}]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*hor series*)
+
+
+(* ::Input::Initialization:: *)
+h\[Kappa]horSeries[m_,a_,\[Omega]_,\[Lambda]0_,\[Gamma]ll_,r_, nmax_:10]:=
+Module[{h,\[Kappa],\[Alpha],\[Beta],\[Gamma],\[Delta],prefac,t1,x,\[Nu]},
+\[Nu]=(I (a m-2 (1+Sqrt[1-a^2]) \[Omega]))/(2 Sqrt[1-a^2]);
+x=r-(1+Sqrt[1-a^2]);h[n_]:=(h[n]=-(1/(\[Alpha][2]n(n-1)+\[Beta][1]n+\[Gamma][0]))Sum[h[i](i(i-1)\[Alpha][n+2-i]+i \[Beta][n+1-i]+\[Gamma][n-i]),{i,Max[0,n-4],n-1}]);
+	\[Kappa][n_]:=(\[Kappa][n]=-(1/(\[Alpha][2]n(n-1)+\[Beta][1]n+\[Gamma][0]))(
+	Sum[\[Kappa][i](i(i-1)\[Alpha][n+2-i]+i \[Beta][n+1-i]+\[Gamma][n-i]),{i,Max[1,n-4],n-1}]+
+	+Sum[h[n-j]\[Delta][j],{j,0,Min[n,4]}])
+	);
+h[0]=1;
+\[Alpha][0]=0;
+\[Alpha][1]=0;
+\[Alpha][2]=4-4 a^2;
+\[Alpha][3]=4 Sqrt[1-a^2];
+\[Alpha][4]=1;
+\[Alpha][n_]/;n>4:=0;
+\[Beta][0]=0;
+\[Beta][1]=-4 (-1+a^2) (1+2 \[Nu]);
+\[Beta][2]=Sqrt[1-a^2] (6+8 \[Nu]);
+\[Beta][3]=2 (1+\[Nu]);
+\[Beta][n_]/;n>3:=0;
+\[Gamma][-1]=0;
+\[Gamma][0]=-4 a m \[Omega]-4 Sqrt[1-a^2] (a m-2 \[Omega]) \[Omega]+4 (\[Nu]^2+2 \[Omega]^2)+a^2 (m^2-4 (\[Nu]^2+\[Omega]^2));
+\[Gamma][1]=-4 \[Omega] (a m-4 \[Omega]+2 a^2 \[Omega])+2 Sqrt[1-a^2] (-\[Lambda]0+\[Nu]+2 \[Nu]^2-2 a m \[Omega]+8 \[Omega]^2);
+\[Gamma][2]=-\[Lambda]0+\[Nu]+\[Nu]^2+2 \[Omega] (-a m-2 a^2 \[Omega]+6 (1+Sqrt[1-a^2]) \[Omega]);
+\[Gamma][3]=4 (1+Sqrt[1-a^2]) \[Omega]^2;
+\[Gamma][4]=\[Omega]^2;
+\[Gamma][n_]/;n>4:=0;
+\[Delta][0]=0;
+\[Delta][1]=2 (-1+a^2)+Sqrt[1-a^2] (-2-a^2 (-1+\[Gamma]ll));
+\[Delta][2]=-3 (1+Sqrt[1-a^2])-1/2 a^2 (-5+\[Gamma]ll);
+\[Delta][3]=-1-2 Sqrt[1-a^2];
+\[Delta][4]=-(1/2);
+\[Delta][n_]/;n>4:=0;
+prefac=E^(-I (-((a m)/(2+2 Sqrt[1-a^2]))+\[Omega]) (1+Sqrt[1-a^2]-Log[4]+1/2 (1-1/Sqrt[1-a^2]) Log[4-4 a^2])) x^\[Nu];
+Return[{
+{t1=prefac Sum[h[n]x^n,{n,0,nmax}], prefac Sum[n h[n]x^(n-1),{n,1,nmax}]+t1(\[Nu]/x), Abs[prefac h[nmax]x^nmax]},
+{t1=prefac Sum[\[Kappa][n]x^n,{n,1,nmax}], prefac Sum[n \[Kappa][n]x^(n-1),{n,1,nmax}]+t1(\[Nu]/x), Abs[prefac \[Kappa][nmax]x^nmax]}
+}]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Evolution Series*)
+
+
+(* ::Input::Initialization:: *)
+h\[Kappa]Ds[m_,a_,\[Omega]_,\[Lambda]0_, \[Gamma]ll_,r_,{h0_,h1_},{\[Kappa]0_,\[Kappa]1_},nmax_:10]:=
+Module[{h,\[Kappa],\[Alpha],\[Beta],\[Gamma],\[Delta],prec=Max[$MinPrecision,Min[$TeukolskyWorkingPrecision,Quiet@Precision[{m,a,\[Omega],\[Lambda]0,r,h0,h1}]]]},
+h[n_]:=(h[n]=SetPrecision[-(1/(\[Alpha][0]n(n-1)))(
+If[n>2,h[n-1]((n-1)(n-2)\[Alpha][1]+(n-1)\[Beta][0]),0]+
+Sum[h[i](i(i-1)\[Alpha][n-i]+i \[Beta][n-i-1]+\[Gamma][n-i-2]),{i,Max[2,n-6],n-2}]+
+h[1](\[Beta][n-2]+\[Gamma][n-3])+
+h[0]\[Gamma][n-2]),prec]);
+\[Kappa][n_]:=(\[Kappa][n]=SetPrecision[-(1/(\[Alpha][0]n(n-1)))(
+If[n>2,\[Kappa][n-1]((n-1)(n-2)\[Alpha][1]+(n-1)\[Beta][0]),0]+
+Sum[\[Kappa][i](i(i-1)\[Alpha][n-i]+i \[Beta][n-i-1]+\[Gamma][n-i-2]),{i,Max[2,n-6],n-2}]+
+\[Kappa][1](\[Beta][n-2]+\[Gamma][n-3])+
+\[Kappa][0]\[Gamma][n-2]
++Sum[\[Delta][j]h[n-2-j],{j,0,Min[n-2,4]}]
+),prec]);
+h[0]=h0;
+h[1]= h1;
+\[Kappa][0]=\[Kappa]0;
+\[Kappa][1]= \[Kappa]1;
+\[Alpha][0]=(a^2+(-2+r) r)^2;
+\[Alpha][1]=4 (-1+r) (a^2+(-2+r) r);
+\[Alpha][2]=2 (2+a^2-6 r+3 r^2);
+\[Alpha][3]=4 (-1+r);
+\[Alpha][4]=1;
+\[Alpha][n_]/;n>4:=0;
+\[Beta][0]=2 (-1+r) (a^2+(-2+r) r);
+\[Beta][1]=2 (2+a^2-6 r+3 r^2);
+\[Beta][2]=6 (-1+r);
+\[Beta][3]=2 ;
+\[Beta][n_]/;n>3:=0;
+\[Gamma][-1]=0;
+\[Gamma][0]=-((-2+r) r \[Lambda]0)-2 a^3 m \[Omega]-2 a m r^2 \[Omega]+a^4 \[Omega]^2+r^4 \[Omega]^2+a^2 (m^2-\[Lambda]0+2 r^2 \[Omega]^2);
+\[Gamma][1]=2 (\[Lambda]0-r \[Lambda]0+2 r \[Omega] (-a m+a^2 \[Omega]+r^2 \[Omega]));
+\[Gamma][2]=-\[Lambda]0+2 \[Omega] (-a m+a^2 \[Omega]+3 r^2 \[Omega]);
+\[Gamma][3]=4 r \[Omega]^2;
+\[Gamma][4]=\[Omega]^2;
+\[Gamma][n_]/;n>4:=0;
+\[Delta][0]=-(1/2) (a^2+(-2+r) r) (r^2+a^2 \[Gamma]ll);
+\[Delta][1]=(3-2 r) r^2-a^2 (r-\[Gamma]ll+r \[Gamma]ll);
+\[Delta][2]=-3 (-1+r) r-1/2 a^2 (1+\[Gamma]ll);
+\[Delta][3]=1-2 r;
+\[Delta][4]=-(1/2);
+\[Delta][n_]/;n>4:=0;
+Return[
+Transpose@{
+{
+{{r},Sequence@@Table[n!h[n],{n,0,nmax}]},
+FudgeZero[Abs[h[nmax]]],
+(Evaluate[Sum[h[n](#-r)^n,{n,0,nmax}]]&),
+Table[n!h[n],{n,0,nmax}]
+},
+{
+{{r},Sequence@@Table[n!\[Kappa][n],{n,0,nmax}]},
+FudgeZero[Abs[\[Kappa][nmax]]],
+(Evaluate[Sum[\[Kappa][n](#-r)^n,{n,0,nmax}]]&),
+Table[n!\[Kappa][n],{n,0,nmax}]
+}
+}]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*h\[Kappa]TSolve*)
+
+
+h\[Kappa]TSolve::icaccuraccy="Warning: asymptotic expansion of order `1` at r=`2` provides insufficiently accurate initial conditions to meet PrecsionGoal, `3`."
+
+
+(* ::Input::Initialization:: *)
+h\[Kappa]TSolve[m_,a_,\[Omega]_,\[Lambda]_,\[Gamma]ll_,{r0_,r1_},seriesF_Symbol,
+OptionsPattern[{
+PrecisionGoal-> $TeukolskyPrecisionGoal,
+WorkingPrecision-> $TeukolskyWorkingPrecision,
+MaxSteps-> 10^5,
+Order-> 30
+}]
+]:=
+Module[
+{
+itable,
+nmax=OptionValue[Order],
+WP=Max[
+OptionValue@WorkingPrecision,
+OptionValue@PrecisionGoal+OptionValue@Order,
+$MinPrecision
+],
+err=10^-(OptionValue[PrecisionGoal]+2),
+rd0,
+rd1,
+ics
+},
+Block[
+{
+$RecursionLimit=$RecursionLimit+OptionValue[MaxSteps],
+$MinPrecision=WP
+},
+ics=seriesF[m,a,\[Omega],\[Lambda],\[Gamma]ll,r0,OptionValue[Order]];
+If[ics[[1,3]]>10^-(OptionValue[PrecisionGoal]) Abs@ics[[1,1]]||ics[[2,3]]>10^-(OptionValue[PrecisionGoal]) Abs@ics[[2,1]],
+Message[h\[Kappa]TSolve::icaccuraccy,OptionValue[Order],r0,OptionValue[PrecisionGoal]]
+];
+itable=
+Reap[
+rd0=h\[Kappa]Ds[m,a,\[Omega],\[Lambda],\[Gamma]ll,r0,ics[[1,1;;2]],ics[[2,1;;2]],nmax];
+Sow[First[rd0]];
+h\[Kappa]TSolveStep[m,a,\[Omega],\[Lambda],\[Gamma]ll,rd0,r0,r0+ Sign[r1-r0]SetPrecision[
+Min[
+Max[
+Min[(err/rd0[[2]])^(1/nmax)],
+(r0^2-2r0+a^2)/(r0^2+a^2) Abs[r1-r0]/OptionValue[MaxSteps]
+],
+Quiet[Abs[\[Pi]/\[Omega]],{Power::infy}],
+Abs[r1-r0]
+],WP],
+r1,err,nmax,WP,(r0^2-2r0+a^2)/(r0^2+a^2) Abs[r1-r0]/OptionValue[MaxSteps]]
+][[2,1]];
+{
+Interpolation[Sort@itable[[All,1]],InterpolationOrder->2nmax],
+Interpolation[Sort@itable[[All,2]],InterpolationOrder->2nmax]
+}
+]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*InterpolationStep*)
+
+
+(* ::Input::Initialization:: *)
+h\[Kappa]TSolveStep[m_,a_,\[Omega]_,\[Lambda]_,\[Gamma]ll_,RDprev_,rprev_,rnew_,rmax_,err_,nmax_,WP_,minstep_]:=
+With[
+{
+RDnew=h\[Kappa]Ds[m,a,\[Omega],\[Lambda],\[Gamma]ll,rnew,
+SetPrecision[{RDprev[[3,1]][rnew],Derivative[1][RDprev[[3,1]]][rnew]},WP],
+SetPrecision[{RDprev[[3,2]][rnew],Derivative[1][RDprev[[3,2]]][rnew]},WP]
+,nmax]
+},
+With[
+{
+ht0=RDnew[[3,1]][(rnew+rprev)/2],
+ht1=RDprev[[3,1]][(rnew+rprev)/2],
+\[Kappa]t0=RDnew[[3,2]][(rnew+rprev)/2],
+\[Kappa]t1=RDprev[[3,2]][(rnew+rprev)/2]
+},
+If[
+(Abs[rnew-rprev]>=minstep)&&( Abs@((ht0-ht1)/FudgeZero@Max[Abs@ht0+Abs@ht1])>err|| Abs@((\[Kappa]t0-\[Kappa]t1)/FudgeZero@Max[Abs@\[Kappa]t0+Abs@\[Kappa]t1])>err),
+h\[Kappa]TSolveStep[m,a,\[Omega],\[Lambda],\[Gamma]ll,RDprev,rprev,(rprev+rnew)/2,rmax,err,nmax,WP,minstep],
+Sow[First[RDnew]];
+If[
+Abs[rnew-rmax]>rmax 10^-WP,
+h\[Kappa]TSolveStep[m,a,\[Omega],\[Lambda],\[Gamma]ll,RDnew,rnew,SetPrecision[rnew+Sign[rnew-rprev] 
+Min[
+Max[
+Min[(err/RDnew[[2]])^(1/nmax)],
+(rnew^2-2rnew+a^2)/(rnew^2+a^2)/((rprev^2-2rprev+a^2)/(rprev^2+a^2))  minstep
+],
+Quiet[Abs[\[Pi]/\[Omega]],{Power::infy}],
+Abs[rmax-rnew],
+2Abs[rnew-rprev]
+],
+WP],rmax,err,nmax,WP,(rnew^2-2rnew+a^2)/(rnew^2+a^2)/((rprev^2-2rprev+a^2)/(rprev^2+a^2))minstep]
+]
+]
+]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*h\[Kappa]Mode*)
+
+
+(* ::Input::Initialization:: *)
+h\[Kappa]Mode[{m_,a_,\[Omega]_,\[Lambda]0_,\[Gamma]ll_},{inGrid_NGrid,upGrid_NGrid},opts:OptionsPattern[
+{
+PrecisionGoal:> $TeukolskyPrecisionGoal,
+WorkingPrecision:> $TeukolskyWorkingPrecision,
+MaxSteps-> 10^5,
+Order-> 30,
+"rinf"->Automatic,
+"rhor"->Automatic,
+"RadialDerivatives"->2
+}]
+]:=Module[{hins,\[Kappa]ins,hups,\[Kappa]ups,insol,upsol,rhor,rinf,rinmax,rupmin,out},
+rhor=If[OptionValue["rhor"]===Automatic,Min@NGridPointList[inGrid],OptionValue["rhor"]];
+rinf=If[OptionValue["rinf"]===Automatic,Max@NGridPointList[upGrid],OptionValue["rinf"]];
+rinmax=Max@NGridPointList[inGrid];(*Print[{rhor,rinmax}];*)
+rupmin=Min@NGridPointList[upGrid];(*Print[{rinf,rupmin}];*)
+EchoTiming[insol=h\[Kappa]TSolve[m,a,\[Omega], \[Lambda]0,\[Gamma]ll,{rhor,rinmax},h\[Kappa]horSeries,FilterRules[{opts},{PrecisionGoal,WorkingPrecision,MaxSteps,Order}]]];
+EchoTiming[upsol=h\[Kappa]TSolve[m,a,\[Omega], \[Lambda]0,\[Gamma]ll,{rinf,rupmin},h\[Kappa]infSeries,FilterRules[{opts},{PrecisionGoal,WorkingPrecision,MaxSteps,Order}]]];
+hins={insol[[1]]/@inGrid,Derivative[1][insol[[1]]]/@inGrid};
+\[Kappa]ins={insol[[2]]/@inGrid,Derivative[1][insol[[2]]]/@inGrid};
+hups={upsol[[1]]/@upGrid,Derivative[1][upsol[[1]]]/@upGrid};
+\[Kappa]ups={upsol[[2]]/@upGrid,Derivative[1][upsol[[2]]]/@upGrid};
+out={
+h\[Kappa]Ds[m,a,\[Omega],\[Lambda]0, \[Gamma]ll,inGrid,hins,\[Kappa]ins,OptionValue["RadialDerivatives"]][[4]],
+h\[Kappa]Ds[m,a,\[Omega],\[Lambda]0, \[Gamma]ll,upGrid,hups,\[Kappa]ups,OptionValue["RadialDerivatives"]][[4]]
+};
+Return[out]
+]
+
+
+(* ::Subsection:: *)
 (*Spin 2 calculation*)
 
 
@@ -1122,7 +1976,7 @@ d\[CapitalDelta]d0[a_,m_,\[Omega]_,r_]:=Function[{h0,h1,h2},Evaluate[
 ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Spin 0 MRProjectors*)
 
 
@@ -1285,11 +2139,11 @@ hvec[[All,1]]
 ];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Output Generation*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*GetComp functions*)
 
 
@@ -1366,7 +2220,10 @@ AccuracyGoal->9,
 "rstmax"->Automatic,
 "nres"->4,(* Resolution in the r* direction:  dr* = M / n  (or dr = M / n). *)
 "angres"->8, (* Resolution in the \[Theta] direction: number of points = nres * qres. *)
-"dformat"->"Real64"(* Data format for output files. *)
+"dformat"->"Real64"(* Data format for output files. *),
+"Interpolator"->Automatic,
+MaxSteps-> 10^5,
+Order-> 30
 }
 
 
@@ -1388,9 +2245,11 @@ prec,a0,r0,nterms,\[Omega]0,a\[Omega]0,
 lmins2,lmins1,lmins0,lmins,
 rprmvals,rp,rm,
 \[Kappa]ord,rinf,rmax,xhor,inford,horord,accgoal,rstarmin,rstarmax,nres,qres,rhor,rmin,rupmin,rupmax,rgrid,dformat,
-Bmats,eigs,Bmatm2,Bmatm1,Bmat0,Bmatp1,Bmatp2,eigs2,eigs1,eigs0,Ys,Ym2s,Ym1s,Y0s,Yp1s,Yp2s,
+Bmats,eigs,Bmatm2,Bmatm1,Bmat0,Bmatp1,Bmatp2,
+(*eigs2,eigs1,eigs0,*)
+Ys,Ym2s,Ym1s,Y0s,Yp1s,Yp2s,
 rsL,rsR,
-\[Gamma]mat,\[Lambda]hat,\[Lambda]2hat,signmat,\[CapitalLambda]hat,idmat,
+(*\[Gamma]mat,*)\[Lambda]hat,\[Lambda]2hat,signmat,\[CapitalLambda]hat,idmat,
 alplmterm1A,alplmterm1B,alplmterm2A,alplmterm2B
 },
 (*HelperFunctions to be divorced from main loop*)
@@ -1451,7 +2310,7 @@ S0subs=teuks0subs[[4;;6]];
 
 (* Teukolsky equations for trace, and for kappa. *)
 h0subs=DefTeukSubs[0,{h0,S0},{\[CapitalDelta],K},{M,a,m,\[Omega],\[Lambda]0},{r,\[Theta]}][[1;;3]];
-\[Kappa]0subs=DefTeukSubs["\[Kappa]0",{\[Kappa]0,h0},{\[CapitalDelta],K},{M,a,m,\[Omega],\[Lambda]0},{r,\[Theta]}];(* This needs further thought! *)
+
 
 Print["2. Projection + Jumps."];
 
@@ -1507,6 +2366,7 @@ dformat=ToString@OptionValue["dformat"]; (* Data format for output files. *)
 rsL=rgridL;
 rsR=rgridR;
 
+
 (* Set up the b matrices, and the eigenvalue matrices. *)
 PrintTemporary["Calculating B-matrices and Eigenvalues"];
 {Bmats,eigs}=Transpose@Table[
@@ -1515,6 +2375,9 @@ bmatEV[s,mm,a\[Omega]0,lmax,WorkingPrecision->prec,AccuracyGoal->accgoal],
 ];
 {Bmatm2,Bmatm1,Bmat0,Bmatp1,Bmatp2}=Bmats;
 {eigs2,eigs1,eigs0}=eigs[[1;;3]];
+
+\[Gamma]mat=Bmat0 . CosMixMatrix[0,2,lmax,mm] . (Transpose@Bmat0);
+\[Gamma]llsubs=Table[\[Gamma]ll[ll]->\[Gamma]mat[[ll+1,ll+1]],{ll,0,lmax}];
 
 (*Ys=Table[Table[If[ll>=lmins[[ss+3]],1/Sqrt[2\[Pi]]SpinWeightedSphericalHarmonic[ss,ll,mm][Cos[\[Theta]]]],{ll,0,lmax}],{ss,-2,2}]/.Null->0;*)
 Ys=Table[Table[If[ll>=lmins[[ss+3]],SpinWeightedSphericalHarmonicY[ss,ll,mm,\[Theta],0],0],{ll,0,lmax}],{ss,-2,2}];
@@ -1526,61 +2389,94 @@ Ys=Table[Table[If[ll>=lmins[[ss+3]],SpinWeightedSphericalHarmonicY[ss,ll,mm,\[Th
 \[CapitalLambda]hat=\[Lambda]hat . \[Lambda]2hat;
 signmat=DiagonalMatrix[Table[If[ll<lmins0,0,(-1)^(ll+mm)],{ll,0,lmax}]];
 
+Print["Generate MSTModes"];
 
+(* This is a bad way to do it, change in future *)
+tiny\[Epsilon]=SetPrecision[10^(-prec+3),prec];
+rsR[[1]]=r0+tiny\[Epsilon];
+If[rsR[[1]]>r0,Print["True"];];
+
+(* Ngrids (currently for testing)*)
+lNGrid=NGrid["gridL", Transpose@{rsL,rsL}];
+rNGrid=NGrid["gridR", Transpose@{rsR,rsR}];
+
+Block[{
+	$MST\[Nu]Precision=accgoal,
+	$MST\[Nu]WorkingPrecision=prec,
+	$CFPrecision=prec-5,
+	$TeukolskyWorkingPrecision=prec,
+	$TeukolskyPrecisionGoal=accgoal,
+	$SWSHaccuracy=accgoal,
+	$SWSHEVPrecision=prec
+},
+EchoTiming[MMm2vec = Table[If[ll>=lmins2,MSTMode[{-2,ll,mm,a0,\[Omega]0},{lNGrid,rNGrid},"RadialDerivatives"-> 4 ,"CleanUp"->False,"Interpolator"->OptionValue["Interpolator"]],0],{ll,0,lmax}],"Generate s=-2 MSTModes"];
+EchoTiming[MMm1vec = Table[If[ll>=lmins2,MSTMode[{-1,ll,mm,a0,\[Omega]0},{lNGrid,rNGrid},"RadialDerivatives"-> 2,"CleanUp"->False,"Interpolator"->OptionValue["Interpolator"]],0],{ll,0,lmax}],"Generate s=-1 MSTModes"];
+];
+
+EchoTiming[Monitor[
+MMh\[Kappa]vec=Table[If[ll>=lmins0,h\[Kappa]Mode[{mm,a0,\[Omega]0,eigs0[[ll+1]],\[Gamma]mat[[ll+1,ll+1]]},{lNGrid,rNGrid},
+"rinf"->rinf,"rhor"-> rhor,
+PrecisionGoal->accgoal,
+WorkingPrecision->prec,
+MaxSteps-> OptionValue[MaxSteps],
+Order-> OptionValue[Order]
+],0],{ll,0,lmax}],
+{"Generate h\[Kappa]Modes ",ll}
+],"Generate h\[Kappa]Modes"];
 
 (* N.B. I have multiplied calD by -1 because we use the -+++ signature. The results for mode functions and fluxes then agree with the BHPT results using TeukolskyPointParticleMode.
 See check_sourceterms_with_BHPtoolkit.nb. *)
 PrintTemporary["Jumps"];
-ABDsubs={calD->4*\[Pi]/(r^2*ut),calA->1/\[CapitalDelta][r]*(EE*(r^2+a^2)-a*LL),calB->LL-a*EE};
-W0=m*(\[CapitalOmega]*(r^2+a^2)-a)/\[CapitalDelta][r];
-Q0=m*(1/Sin[\[Theta]]-a*\[CapitalOmega]*Sin[\[Theta]])/.{\[Theta]->\[Pi]/2};
-calC2=calB^2*S0;
-calC1=2*calB*(I*calA*(S0p+Q0*S0)+calB*(-I*W0+1/r)*S0);
-calC0=2*calA*(I*calB*(2/r-I*W0)+calA*(-Q0+I*a/r))*(S0p+Q0*S0)+(calA^2*\[CapitalLambda]+calB^2*(I*D[W0,r]-2*I*W0/r-W0^2))*S0;
-V0minus4=\[CapitalDelta][r]*(W0^2+I*D[W0,r])-I*D[\[CapitalDelta][r],r]*W0+6*I*m*\[CapitalOmega]*r-\[CapitalLambda];
-plussubs={S0->Sp2[\[Pi]/2],S0p->Sp2'[\[Pi]/2]};
-minussubs={m->-mrepl,S0->Sm2[\[Pi]/2],S0p->Sm2'[\[Pi]/2]};
-Jump0p=calD*\[CapitalDelta][r]*(calC1-D[\[CapitalDelta][r],r]/\[CapitalDelta][r]*calC2)/.plussubs;
-Jump1p=calD*\[CapitalDelta][r]*(calC0-V0minus4/\[CapitalDelta][r]*calC2)/.plussubs;
-Jump0m=calD*\[CapitalDelta][r]*((calC1-D[\[CapitalDelta][r],r]/\[CapitalDelta][r]*calC2)/.minussubs)/.{mrepl->m};
-Jump1m=calD*\[CapitalDelta][r]*((calC0-V0minus4/\[CapitalDelta][r]*calC2)/.minussubs)/.{mrepl->m};
 
-mysubs={LL->r0*v*(1-2*a*v^3+a^2*v^4)/Sqrt[1-3*v^2+2*a*v^3],EE->(1-2*v^2+a*v^3)/Sqrt[1-3*v^2+2*a*v^3],\[CapitalOmega]->v^3/(1+a*v^3)}/.{v->1/Sqrt[r0]}/.awsubs;
-utsubs={ut->-EE*gup[[1,1]]+LL*gup[[1,4]]}/.\[CapitalDelta]Kr0subs/.{\[Theta]->\[Pi]/2,r->r0}/.mysubs/.{a->a0};
-orbitsubs=Join[mysubs,utsubs];
-\[CapitalOmega]0-(\[CapitalOmega]/.mysubs)/.awsubs;
-Jumpnum0p=Jump0p/.ABDsubs/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs/.orbitsubs//Simplify;
-Jumpnum1p=Jump1p/.ABDsubs/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs/.orbitsubs//Simplify;
-Jumpnum0m=Jump0m/.ABDsubs/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs/.orbitsubs//Simplify;
-Jumpnum1m=Jump1m/.ABDsubs/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs/.orbitsubs//Simplify;
-
-
-If[a\[Omega]0==0,
-s2jumps=Table[{Pp2j0[ll]->Jumpnum0p,Pp2j1[ll]->Jumpnum1p,Pm2j0[ll]->Jumpnum0m,Pm2j1[ll]->Jumpnum1m}/.
-{Sp2[\[Pi]/2]->SpinWeightedSpheroidalHarmonicS[2,ll,mm,a\[Omega]0][\[Pi]/2,0],
-Sm2[\[Pi]/2]->SpinWeightedSpheroidalHarmonicS[-2,ll,mm,a\[Omega]0][\[Pi]/2,0],Sp2'[\[Pi]/2]->D[SpinWeightedSpheroidalHarmonicS[2,ll,mm,a\[Omega]0][\[Theta],0],\[Theta]]/.{\[Theta]->\[Pi]/2},
-Sm2'[\[Pi]/2]->D[SpinWeightedSpheroidalHarmonicS[-2,ll,mm,a\[Omega]0][\[Theta],0],\[Theta]]/.{\[Theta]->\[Pi]/2},\[CapitalLambda]->Get\[CapitalLambda][ll,mm,a\[Omega]0]},{ll,lmins2,lmax}]//Join//Flatten
-,
-s2jumps=Table[{Pp2j0[ll]->Jumpnum0p,Pp2j1[ll]->Jumpnum1p,Pm2j0[ll]->Jumpnum0m,Pm2j1[ll]->Jumpnum1m}/.
-{Sp2[\[Pi]/2]->SpinWeightedSpheroidalHarmonicS[2,ll,mm,a\[Omega]0,Method->{"SphericalExpansion","NumTerms"->nterms}][\[Pi]/2,0],
-Sm2[\[Pi]/2]->SpinWeightedSpheroidalHarmonicS[-2,ll,mm,a\[Omega]0,Method->{"SphericalExpansion","NumTerms"->nterms}][\[Pi]/2,0],Sp2'[\[Pi]/2]->D[SpinWeightedSpheroidalHarmonicS[2,ll,mm,a\[Omega]0,Method->{"SphericalExpansion","NumTerms"->nterms}][\[Theta],0],\[Theta]]/.{\[Theta]->\[Pi]/2},
-Sm2'[\[Pi]/2]->D[SpinWeightedSpheroidalHarmonicS[-2,ll,mm,a\[Omega]0,Method->{"SphericalExpansion","NumTerms"->nterms}][\[Theta],0],\[Theta]]/.{\[Theta]->\[Pi]/2},\[CapitalLambda]->Get\[CapitalLambda][ll,mm,a\[Omega]0]},{ll,lmins2,lmax}]//Join//Flatten
+If[a\[Omega]0!=0,
+SetOptions[SpinWeightedSpheroidalHarmonicS,Method->{"SphericalExpansion","NumTerms"->nterms}];
 ];
 
-(* Now for the jumps in the derivative of the trace. *)
-If[a\[Omega]0==0,
-s0jumps=Table[hj1[ll]->(-16*\[Pi]/(ut*\[CapitalDelta][r])*S0[\[Pi]/2]/.{S0[\[Pi]/2]->SpinWeightedSpheroidalHarmonicS[0,ll,mm,a\[Omega]0][\[Pi]/2,0]})/.\[CapitalDelta]Kr0subs/.{r->r0}/.orbitsubs,{ll,lmins0,lmax}];
+s2jumps=Flatten@Table[
+Join[
+CalcJump[{2,mm,eigs2[[ll+1]]},OD,{Pp2j0[ll],Pp2j1[ll]},{
+SpinWeightedSpheroidalHarmonicS[2,ll,mm,a\[Omega]0][\[Pi]/2,0],
+D[SpinWeightedSpheroidalHarmonicS[2,ll,mm,a\[Omega]0][\[Theta],0],\[Theta]]/.\[Theta]->\[Pi]/2}
+(* {#[[1]][0]/Sqrt[2\[Pi]],-(#[[2]][0]/Sqrt[2\[Pi]])}&@SpinWeightedSpheroidalHarmonics[2,ll,mm,a\[Omega]0] *)
+]
 ,
-s0jumps=Table[hj1[ll]->CleanValue[(-16*\[Pi]/(ut*\[CapitalDelta][r])*S0[\[Pi]/2]/.{S0[\[Pi]/2]->SpinWeightedSpheroidalHarmonicS[0,ll,mm,a\[Omega]0,Method->{"SphericalExpansion","NumTerms"->nterms}][\[Pi]/2,0]})/.\[CapitalDelta]Kr0subs/.{r->r0}/.orbitsubs],{ll,lmins0,lmax}];
+CalcJump[{-2,mm,eigs2[[ll+1]]},OD,{Pm2j0[ll],Pm2j1[ll]},{
+SpinWeightedSpheroidalHarmonicS[-2,ll,mm,a\[Omega]0][\[Pi]/2,0],
+D[SpinWeightedSpheroidalHarmonicS[-2,ll,mm,a\[Omega]0][\[Theta],0],\[Theta]]/.\[Theta]->\[Pi]/2}]
+(* {#[[1]][0]/Sqrt[2\[Pi]],-(#[[2]][0]/Sqrt[2\[Pi]])}&@SpinWeightedSpheroidalHarmonics[-2,ll,mm,a\[Omega]0] *)
+]
+,
+{ll,lmins2,lmax}
 ];
 
+s0jumps=Flatten@Table[CalcJump[{0,mm},OD,{hj0[ll],hj1[ll]},{CleanValue[SpinWeightedSpheroidalHarmonicS[0,ll,mm,a\[Omega]0][\[Pi]/2,0]]}],{ll,lmins0,lmax}];
 
-sourcetermsubs=Table[Simplify[{dhlplp[ll]->-16*\[Pi]/(\[CapitalDelta][r]*ut)*calA^2*SpinWeightedSphericalHarmonicY[0,ll,mm,\[Pi]/2,0],
-dhlmlm[ll]->-16*\[Pi]/(\[CapitalDelta][r]*ut)*calA^2*SpinWeightedSphericalHarmonicY[0,ll,mm,\[Pi]/2,0],
-dhmpmp[ll]->16*\[Pi]/(\[CapitalDelta][r]*ut)*calB^2*SpinWeightedSphericalHarmonicY[2,ll,mm,\[Pi]/2,0],
-dhmmmm[ll]->16*\[Pi]/(\[CapitalDelta][r]*ut)*calB^2*SpinWeightedSphericalHarmonicY[-2,ll,mm,\[Pi]/2,0],
-d\[Rho]chlpmm[ll]->-16*\[Pi]/(\[CapitalDelta][r]*ut)*(r*I*calA*calB)*SpinWeightedSphericalHarmonicY[-1,ll,mm,\[Pi]/2,0]}/.ABDsubs]/.\[CapitalDelta]Kr0subs/.{r->r0,a->a0}/.orbitsubs,
-{ll,lmins0,lmax}]//Flatten;
+sourcetermsubs=Flatten@Table[
+Calcsourcesubs[OD,{dhlplp[ll],dhlmlm[ll],dhmpmp[ll],dhmmmm[ll],d\[Rho]chlpmm[ll]},
+{
+	(*SpinWeightedSphericalHarmonicY[0,ll,mm,\[Pi]/2,0]*) SpinWeightedSphericalHarmonic[0,ll,mm][0]/Sqrt[2\[Pi]],
+	(*SpinWeightedSphericalHarmonicY[-1,ll,mm,\[Pi]/2,0] *)SpinWeightedSphericalHarmonic[-1,ll,mm][0]/Sqrt[2\[Pi]],
+	(*SpinWeightedSphericalHarmonicY[2,ll,mm,\[Pi]/2,0]*) SpinWeightedSphericalHarmonic[2,ll,mm][0]/Sqrt[2\[Pi]],
+	(*SpinWeightedSphericalHarmonicY[-2,ll,mm,\[Pi]/2,0]*) SpinWeightedSphericalHarmonic[-2,ll,mm][0]/Sqrt[2\[Pi]]
+}],
+{ll,lmins0,lmax}
+];
+
+EchoTiming[
+knowns=CalcJumps\[Kappa]s1[
+{\[Kappa]j0,\[Kappa]j1,Pm1j0,Pm1j1},
+OD, 
+{lmax,mm},
+{
+{Pm2j0,Pm2j1,s2jumps},
+{hj0,hj1,s0jumps},
+{dhlplp,dhlmlm,dhmpmp,dhmmmm,d\[Rho]chlpmm,sourcetermsubs}
+},
+{Bmatm2,Bmatm1,Bmat0,Bmatp1,Bmatp2},
+{eigs0,eigs1,eigs2},
+{\[Gamma]mat}],
+"\[Kappa] and s1 jumps"
+];
 
 (* Radial functions as vectors. *)
 ones=Table[1,{ll,0,lmax}];
@@ -1591,7 +2487,7 @@ Pm1vec=Table[If[ll>=lmins1,Pm1[ll][r],0],{ll,0,lmax}];
 Pm2vec=Table[If[ll>=lmins2,Pm2[ll][r],0],{ll,0,lmax}];
 
 (* \[Kappa] needs special handling *)
-\[Gamma]mat=Bmat0 . CosMixMatrix[0,2,lmax,mm] . (Transpose@Bmat0);
+
 tmp1=DiagonalMatrix[Table[If[ll>=lmins0,\[Kappa][ll][r],0],{ll,0,lmax}]];
 tmp2=a^2*Table[If[j!=k,If[j>=lmins0&&k>=lmins0,
 \[Gamma]mat[[j+1,k+1]]*h[j][r]/(2*(eigs0[[j+1]]-eigs0[[k+1]]))
@@ -1614,7 +2510,7 @@ teuk\[Kappa]=Dop[\[CapitalDelta][r]*Ddag[\[Kappa][r]]]-2*I*\[Omega]*r*\[Kappa][r
 \[Kappa]subs4=D[\[Kappa]subs3,r]/.\[Kappa]subs2/.\[CapitalDelta]Ksimp//Simplify;
 \[Kappa]subs=Join[\[Kappa]subs2,\[Kappa]subs3,\[Kappa]subs4]//Simplify;
 (*mat=CosMixMatrix[0,2,lmax,mm];*)
-\[Gamma]llsubs=Table[\[Gamma]ll[ll]->\[Gamma]mat[[ll+1,ll+1]],{ll,0,lmax}];
+
 
 (* 
   Now we need replacement rules from the Teukolsky and Teukolsky-Starobinskii equations, on an industrial scale.
@@ -1632,275 +2528,13 @@ hlsubs= Table[h0subs/.awsubs/.{\[Lambda]0->eigs0[[ll+1]]}/.h0tohrepl/.HeadFn[h,l
 
 (* Now consider the Teuksolsky-Starobinskii identities *)
 AArepl={AA->Sqrt[\[CapitalLambda]^2*(\[CapitalLambda]+2)^2-8*\[Omega]^2*\[CapitalLambda]*(\[Alpha]sq*(5*\[CapitalLambda]+6)-12*a^2)+144*\[Omega]^4*\[Alpha]sq^2]}/.{\[Alpha]sq->a^2-a*m/\[Omega]};
-DD2wp=\[Lambda]C^2*(\[Lambda]C-2)^2+8*a*\[Omega]*(m-a*\[Omega])*(\[Lambda]C-2)*(5*\[Lambda]C-4)+48*(a*\[Omega])^2*(2*(\[Lambda]C-2)+3*(m-a*\[Omega])^2); (* Pound and Wardell's version. *)
-Simplify[(AA^2-DD2wp)/.AArepl/.{\[Lambda]C->\[CapitalLambda]+2}];(* Check against Pound and Wardell. *)
 BBrepl={BB->Sqrt[\[Lambda]^2 +4*a*m*\[Omega]-4*a^2*\[Omega]^2 ]};
 Crepl0={CC->AA+12 I M sgn \[Omega],Cstar->AA-12 I M sgn \[Omega]};
 Clear[ll];
-Pm2lrepl=Table[Pm2repl/.awsubs/.HeadFn[Pp2,ll]/.HeadFn[Pm2,ll]/.Crepl0/.AArepl/.{\[CapitalLambda]->eigs2[[ll+1]]}/.{sgn->(-1)^(ll+mm)}/.awsubs,{ll,lmins2,lmax}]//Flatten;
-Pm1lrepl=Table[Pm1repl/.awsubs/.HeadFn[Pp1,ll]/.HeadFn[Pm1,ll]/.BBrepl/.{\[Lambda]->eigs1[[ll+1]]}/.awsubs,{ll,lmins1,lmax}]//Flatten;
+
 Pp2lrepl=Table[Pp2repl/.awsubs/.HeadFn[Pm2,ll]/.HeadFn[Pp2,ll]/.Crepl0/.AArepl/.{\[CapitalLambda]->eigs2[[ll+1]]}/.{sgn->(-1)^(ll+mm)}/.awsubs,{ll,lmins2,lmax}]//Flatten;
 Pp1lrepl=Table[Pp1repl/.awsubs/.HeadFn[Pm1,ll]/.HeadFn[Pp1,ll]/.BBrepl/.{\[Lambda]->eigs1[[ll+1]]}/.awsubs,{ll,lmins1,lmax}]//Flatten;
 
-(* Spin 1 projections. *)
-(* I have deleted all the projections except lplp, mpmp, lmlm, mmmm and rho h_{lpmp} and rhoc h_{lpmm} *)
-Timing[
-idmat=DiagonalMatrix[Table[If[ll>=lmins0,1,0],{ll,0,lmax}]];
-t0=-(Bmatm1+signmat . Bmatp1) . \[Lambda]hat;
-t1=a\[Omega]0*(Bmatm1 . SinMixMatrix[-1,0,lmax,mm]+signmat . Bmatp1 . SinMixMatrix[1,0,lmax,mm]);
-SS0=t0+t1;
-Ss1lplp=SS0;
-Ss1lmlm=SS0;
-Ss1mpmp=Bmatp1 . (-\[Lambda]2hat+a\[Omega]0*SinMixMatrix[1,2,lmax,mm]);
-Ss1mmmm=Bmatm1 . (\[Lambda]2hat-a\[Omega]0*SinMixMatrix[-1,-2,lmax,mm]);
-tmp=2/\[CapitalDelta][r]*Table[Dop[-1,Pp1vec[[ll+1]]],{ll,0,lmax}];
-hraws1lplp=tmp . signmat . Ss1lplp;  (* zzz edited line *)
-hs1lplp=hraws1lplp/.Pp1lrepl/.awsubs;
-tmp=2/\[CapitalDelta][r]*Table[Ddag[-1,Pm1vec[[ll+1]]],{ll,0,lmax}];
-hraws1lmlm=tmp . Ss1lmlm;
-hs1lmlm=hraws1lmlm/.awsubs;
-tmp1=signmat . Table[Ddag[Pp1vec[[ll+1]]],{ll,0,lmax}]/.Pp1lrepl/.awsubs;
-tmp2=Table[Dop[Pm1vec[[ll+1]]],{ll,0,lmax}]/.awsubs;
-tmp=2*(tmp1+tmp2);
-hraws1mpmp=tmp . signmat . Ss1mpmp;  
-hraws1mmmm=-tmp . Ss1mmmm;
-hs1mpmp=hraws1mpmp/.Pp1lrepl/.awsubs;
-hs1mmmm=hraws1mmmm/.Pp1lrepl/.awsubs;
-(* Now for the other components *)
-tmp1=signmat . Table[Ddag[Pp1vec[[ll+1]]],{ll,0,lmax}]/.Pp1lrepl/.awsubs;
-tmp2=Table[Dop[Pm1vec[[ll+1]]],{ll,0,lmax}]/.awsubs;
-calPs1=tmp2+tmp1;
-DcalPs1=Map[Dop,calPs1]/.Pm1lsubs;
-(* Ss1lplp//TableForm *)
-(* l+ m+ *)
-cosmix=CosMixMatrix[1,1,lmax,mm];
-sinmix=SinMixMatrix[0,1,lmax,mm];
-line1=(signmat . (r*DcalPs1-2*calPs1)) . Bmatp1+I*a*(signmat . DcalPs1) . Bmatp1 . cosmix/.Pm1lsubs;
-tmp1=1/\[CapitalDelta][r]*signmat . Pp1vec/.Pp1lrepl/.awsubs;
-tmp2=-r*\[Lambda]hat-I*a*\[Lambda]hat . cosmix+(a*\[Omega]*r+2*I*a)*sinmix+I*a^2*\[Omega]*sinmix . cosmix;
-line2=tmp1 . SS0 . tmp2;
-\[Rho]hs1lpmp=(line1+line2)/.awsubs;
-(* Now the \[Rho]c h_{l+ m-} term *)
-line1=-(r*DcalPs1-2*calPs1) . Bmatm1+I*a*DcalPs1 . Bmatm1 . CosMixMatrix[-1,1,lmax,mm]/.Pm1lsubs;
-tmp1=1/\[CapitalDelta][r]*signmat . Pp1vec/.Pp1lrepl/.awsubs;
-tmp2=r*\[Lambda]hat-I*a*\[Lambda]hat . CosMixMatrix[-1,1,lmax,mm]-(a*\[Omega]*r+2*I*a)*SinMixMatrix[0,-1,lmax,mm]+I*a^2*\[Omega]*SinMixMatrix[0,-1,lmax,mm] . CosMixMatrix[-1,1,lmax,mm];
-line2=tmp1 . SS0 . tmp2;
-\[Rho]chs1lpmm=(line1+line2)/.awsubs;
-];
-(* Spin 2: lplp and mpmp *)
-EchoTiming[
-idmat=DiagonalMatrix[Table[If[ll>=lmins0,1,0],{ll,0,lmax}]];
-t0=Bmatp2 . (\[CapitalLambda]hat-2*a\[Omega]0*\[Lambda]2hat . SinMixMatrix[1,0,lmax,mm]+a\[Omega]0^2*SinMixMatrix[2,0,lmax,mm]);
-t1=signmat . Bmatm2 . (\[CapitalLambda]hat-2*a\[Omega]0*\[Lambda]2hat . SinMixMatrix[-1,0,lmax,mm]+a\[Omega]0^2*SinMixMatrix[-2,0,lmax,mm]);
-Ss2lplp=t0+t1;
-Ss2lmlm=signmat . Ss2lplp; 
-Ss2mpmp=Bmatp2;
-Ss2mmmm=signmat . Bmatm2;
-hraws2lplp=-1/(6*\[Omega]^2*\[CapitalDelta][r]^2)*Pp2vec . Ss2lplp;
-hraws2lmlm=-1/(6*\[Omega]^2*\[CapitalDelta][r]^2)*Pm2vec . Ss2lmlm;
-hs2lplp=hraws2lplp/.awsubs/.Pp2lrepl;
-hs2lmlm=hraws2lmlm/.awsubs;
-tmp1=Table[Ddag[Ddag[Pp2vec[[ll+1]]]],{ll,0,lmax}];
-tmp2=signmat . Table[Dop[Dop[Pm2vec[[ll+1]]]],{ll,0,lmax}];
-tmp=-1/(6*\[Omega]^2)*(tmp1+tmp2);
-hraws2mpmp=tmp . Ss2mpmp;
-hraws2mmmm=tmp . Ss2mmmm;
-hs2mpmp=hraws2mpmp/.Pp2lsubs/.Pp2lrepl/.Pm2lsubs/.awsubs;
-hs2mmmm=hraws2mmmm/.Pp2lsubs/.Pp2lrepl/.Pm2lsubs/.awsubs;
-];
-EchoTiming[
-SSplus=(Bmatp2 . (\[CapitalLambda]hat-2*a*\[Omega]*\[Lambda]2hat . SinMixMatrix[1,0,lmax,mm]+a^2*\[Omega]^2*SinMixMatrix[2,0,lmax,mm]))/.awsubs//Simplify;
-SSminus=(Bmatm2 . (\[CapitalLambda]hat-2*a*\[Omega]*\[Lambda]2hat . SinMixMatrix[-1,0,lmax,mm]+a^2*\[Omega]^2*SinMixMatrix[-2,0,lmax,mm]))/.awsubs//Simplify;
-DdagPp2vec=Map[Ddag,Pp2vec]/.Pp2lrepl/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
-DdagDdagPp2vec=Map[Ddag,DdagPp2vec]/.Pm2lsubs/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
-DdagDdagDdagPp2vec=Map[Ddag,DdagDdagPp2vec]/.Pm2lsubs/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
-DPm2vec=Map[Dop,Pm2vec]/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
-DDPm2vec=Map[Dop,DPm2vec]/.Pm2lsubs/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
-DDDPm2vec=Map[Dop,DDPm2vec]/.Pm2lsubs/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
-DopDdagDdagPp2vec=Map[Dop,DdagDdagPp2vec]/.Pm2lsubs/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
-DdagDDPm2vec=Map[Ddag,DDPm2vec]/.Pm2lsubs/.\[CapitalDelta]Ksimp/.awsubs//Simplify;
-];
-(* lp mp *)
-EchoTiming[
-cosmix=CosMixMatrix[1,1,lmax,mm];
-sinmix=SinMixMatrix[0,1,lmax,mm];
-sinmix1m1=SinMixMatrix[-1,1,lmax,mm];
-\[Rho]mat=r*idmat+I*a*cosmix;
-MMp2=Bmatp2 . (\[Lambda]2hat-a*\[Omega]*SinMixMatrix[2,1,lmax,mm])/.awsubs;
-MMm2=Bmatm2 . (\[Lambda]2hat-a*\[Omega]*SinMixMatrix[-2,-1,lmax,mm])/.awsubs;
-term1=1/(12*\[Omega]^2)*(DDPm2vec . signmat . SSplus-DdagDdagPp2vec . signmat . SSminus) . (\[Lambda]hat-a*\[Omega]*sinmix)/.awsubs;
-term2=-1/(12*\[Omega]^2)*(DDDPm2vec . signmat . SSplus-DopDdagDdagPp2vec . signmat . SSminus) . ((\[Lambda]hat-a*\[Omega]*sinmix) . \[Rho]mat-I*a*sinmix)/.awsubs;
-term3=-1/(3*I*\[Omega])*(DDDPm2vec . signmat . MMp2 . \[Rho]mat . \[Rho]mat-2*DDPm2vec . signmat . MMp2 . \[Rho]mat+2*DPm2vec . signmat . MMp2)/.awsubs;
-tmp=(\[Lambda]hat . \[Lambda]hat-2*a*\[Omega]*\[Lambda]hat . sinmix+a^2*\[Omega]^2*sinmix1m1) . \[Rho]mat . \[Rho]mat-2*I*a*(\[Lambda]hat . sinmix-a*\[Omega]*sinmix1m1) . \[Rho]mat-2*a^2*sinmix1m1;
-term4=-1/(3*I*\[Omega]*\[CapitalDelta][r])*DdagPp2vec . (signmat . MMm2 . tmp)/.awsubs;
-(* Don't forget the \[Beta] factor. *)
-tmp=term1+term2+term3+term4;
-\[Rho]hs2lpmp=(tmp/(-6*I*M*\[Omega]))/.awsubs;
-];
-(* lp mm *)
-EchoTiming[
-idmat=DiagonalMatrix[Table[If[ll>=lmins0,1,0],{ll,0,lmax}]];
-\[Rho]cmat=r*idmat-I*a*CosMixMatrix[-1,1,lmax,mm];
-sinmix=SinMixMatrix[0,-1,lmax,mm];
-MMp2=Bmatp2 . (\[Lambda]2hat-a*\[Omega]*SinMixMatrix[2,1,lmax,mm]);
-MMm2=Bmatm2 . (\[Lambda]2hat-a*\[Omega]*SinMixMatrix[-2,-1,lmax,mm]);
-term1=-1/(12*\[Omega]^2)*(DDPm2vec . SSminus-DdagDdagPp2vec . SSplus) . (\[Lambda]hat-a*\[Omega]*sinmix);
-term2=1/(12*\[Omega]^2)*(DDDPm2vec . SSminus-DopDdagDdagPp2vec . SSplus) . ((\[Lambda]hat-a*\[Omega]*sinmix) . \[Rho]cmat-I*a*sinmix);
-term3=1/(3*I*\[Omega])*(DDDPm2vec . MMm2 . \[Rho]cmat . \[Rho]cmat-2*DDPm2vec . MMm2 . \[Rho]cmat+2*DPm2vec . MMm2);
-sinmix1m1=SinMixMatrix[1,-1,lmax,mm];
-tmp=(\[Lambda]hat . \[Lambda]hat-2*a*\[Omega]*\[Lambda]hat . sinmix+a^2*\[Omega]^2*sinmix1m1) . \[Rho]cmat . \[Rho]cmat-2*I*a*(\[Lambda]hat . sinmix-a*\[Omega]*sinmix1m1) . \[Rho]cmat-2*a^2*sinmix1m1;
-term4=1/(3*I*\[Omega]*\[CapitalDelta][r])*DdagPp2vec . MMp2 . tmp;
-tmp=term1+term2+term3+term4;
-\[Rho]chs2lpmm=(tmp/(-6*I*M*\[Omega]))/.awsubs;
-];
-
-(* Spin 0 *)
-(* When we apply \[Kappa]lsubs, we also should fill in the \[Gamma]ll values *)
-EchoTiming[
-tmp1=-1/(I*\[Omega])*Dop[r*Dop[hvec]] . Bmat0/.hlsubs/.awsubs;
-tmp2a=(ones . Dop[Dop[\[Kappa]mat]]) . Bmat0/.\[Kappa]lsubs/.\[Gamma]llsubs/.hlsubs/.awsubs;
-tmp2=-4*tmp2a/.awsubs;
-hs0lplp=(tmp1+tmp2)/.awsubs;
-
-tmp1=1/(I*\[Omega])*Ddag[r*Ddag[hvec]] . Bmat0/.hlsubs/.awsubs;
-tmp2a=(ones . Ddag[Ddag[\[Kappa]mat]]) . Bmat0/.\[Kappa]lsubs/.\[Gamma]llsubs/.hlsubs/.awsubs;
-tmp2=-4*tmp2a/.awsubs;
-hs0lmlm=(tmp1+tmp2)/.awsubs;
-
-t0=Bmat0 . (\[CapitalLambda]hat-2*a\[Omega]0*\[Lambda]hat . SinMixMatrix[1,2,lmax,mm]+a\[Omega]0^2*SinMixMatrix[0,2,lmax,mm]) . CosMixMatrix[2,1,lmax,mm];
-t1=Bmat0 . (\[Lambda]hat . SinMixMatrix[1,2,lmax,mm]-a\[Omega]0*SinMixMatrix[0,2,lmax,mm]);
-tmpSh=(t0+t1)/.awsubs;
-tmpS\[Kappa]=Bmat0 . (\[CapitalLambda]hat-2*a\[Omega]0*\[Lambda]hat . SinMixMatrix[1,2,lmax,mm]+a\[Omega]0^2*SinMixMatrix[0,2,lmax,mm])/.awsubs;
-hs0mpmp=((a/\[Omega])*hvec . tmpSh-4*(ones . \[Kappa]mat) . tmpS\[Kappa])/.awsubs;
-
-t0=Bmat0 . (\[CapitalLambda]hat-2*a\[Omega]0*\[Lambda]hat . SinMixMatrix[-1,-2,lmax,mm]+a\[Omega]0^2*SinMixMatrix[0,-2,lmax,mm]) . CosMixMatrix[-2,1,lmax,mm];
-t1=-Bmat0 . (\[Lambda]hat . SinMixMatrix[-1,-2,lmax,mm]-a\[Omega]0*SinMixMatrix[0,-2,lmax,mm]);
-tmpSh=(t0+t1)/.awsubs;
-tmpS\[Kappa]=Bmat0 . (\[CapitalLambda]hat-2*a\[Omega]0*\[Lambda]hat . SinMixMatrix[-1,-2,lmax,mm]+a\[Omega]0^2*SinMixMatrix[0,-2,lmax,mm])/.awsubs;
-hs0mmmm=(-(a/\[Omega])*hvec . tmpSh-4*(ones . \[Kappa]mat) . tmpS\[Kappa])/.awsubs;
-];
-
-(* lp mp *)
-EchoTiming[
-t0=r^2*idmat+a^2*CosMixMatrix[1,2,lmax,mm];
-sinmix=SinMixMatrix[0,1,lmax,mm];
-cosmix=CosMixMatrix[1,1,lmax,mm];
-MM0=\[Lambda]hat-a*\[Omega]*sinmix;
-Dhvec=Map[Dop,hvec];
-D\[Kappa]mat=Map[Dop,\[Kappa]mat];
-term1=1/(2*I*\[Omega])*Dhvec . Bmat0 . MM0 . t0;
-term2=-a/\[Omega]*(r*Dhvec . Bmat0 . sinmix-hvec . Bmat0 . MM0 . cosmix);
-tmp=r*idmat+I*a*cosmix;
-term3=4*(ones . D\[Kappa]mat) . Bmat0 . MM0 . tmp;
-term4=-4*((ones . \[Kappa]mat) . Bmat0 . MM0+I*a*(ones . D\[Kappa]mat) . Bmat0 . sinmix);
-\[Rho]hs0lpmp=(term1+term2+term3+term4)/.awsubs;
-];
-
-(* lp mm *)
-EchoTiming[
-t0=r^2*idmat+a^2*CosMixMatrix[-1,2,lmax,mm];
-sinmix=SinMixMatrix[0,-1,lmax,mm];
-MM0=\[Lambda]hat-a*\[Omega]*sinmix;
-Dhvec=Map[Dop,hvec];
-D\[Kappa]mat=Map[Dop,\[Kappa]mat];
-term1=-1/(2*I*\[Omega])*Dhvec . Bmat0 . MM0 . t0;
-term2=a/\[Omega]*(r*Dhvec . Bmat0 . sinmix+hvec . Bmat0 . MM0 . CosMixMatrix[-1,1,lmax,mm]);
-tmp=r*idmat-I*a*CosMixMatrix[-1,1,lmax,mm];
-term3=-4*((ones . D\[Kappa]mat) . Bmat0 . MM0 . tmp);
-term4=4*((ones . \[Kappa]mat) . Bmat0 . MM0+I*a*(ones . D\[Kappa]mat) . Bmat0 . sinmix);
-\[Rho]chs0lpmm=(term1+term2+term3+term4)/.awsubs;
-];
-
-(* Spin 0, 1 and spin 2. *)
-(* lp-lp and mp-mp components. *)
-EchoTiming[
-hs0j0lplp=hs0lplp/.hlsubs/.\[Kappa]lsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
-hs0j1lplp=D[hs0lplp,r]/.hlsubs/.\[Kappa]lsubs/.\[Gamma]llsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
-hs0j0mpmp=hs0mpmp/.hlsubs/.\[Kappa]lsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
-hs0j1mpmp=D[hs0mpmp,r]/.hlsubs/.\[Kappa]lsubs/.\[Gamma]llsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
-hs1j0lplp=hs1lplp/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs1j1lplp=D[hs1lplp,r]/.Pm1lsubs/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs1j0mpmp=hs1mpmp/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs1j1mpmp=D[hs1mpmp,r]/.Pm1lsubs/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs2j0lplp=hs2lplp/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs2j1lplp=D[hs2lplp,r]/.Pm2lsubs/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs2j0mpmp=hs2mpmp/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs2j1mpmp=D[hs2mpmp,r]/.Pm2lsubs/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-];
-
-(* lmlm and mmmm components. *)
-EchoTiming[
-hs0j0lmlm=hs0lmlm/.hlsubs/.\[Kappa]lsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
-hs0j1lmlm=D[hs0lmlm,r]/.hlsubs/.\[Kappa]lsubs/.\[Gamma]llsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
-hs0j0mmmm=hs0mmmm/.hlsubs/.\[Kappa]lsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
-hs0j1mmmm=D[hs0mmmm,r]/.hlsubs/.\[Kappa]lsubs/.\[Gamma]llsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
-hs1j0lmlm=hs1lmlm/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs1j1lmlm=D[hs1lmlm,r]/.Pm1lsubs/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs1j0mmmm=hs1mmmm/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs1j1mmmm=D[hs1mmmm,r]/.Pm1lsubs/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs2j0lmlm=hs2lmlm/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs2j1lmlm=D[hs2lmlm,r]/.Pm2lsubs/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs2j0mmmm=hs2mmmm/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-hs2j1mmmm=D[hs2mmmm,r]/.Pm2lsubs/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-];
-
-(* \[Rho]lpmp and \[Rho]clpmm. *)
-EchoTiming[
-\[Rho]hs0j0lpmp=(\[Rho]hs0lpmp)/.hlsubs/.\[Kappa]lsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
-\[Rho]hs1j0lpmp=(\[Rho]hs1lpmp)/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-\[Rho]hs2j0lpmp=(\[Rho]hs2lpmp)/.Pm2lsubs/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-];
-
-EchoTiming[
-\[Rho]chs0j0lpmm=(\[Rho]chs0lpmm)/.hlsubs/.\[Kappa]lsubs/.hjump/.\[Kappa]jump/.\[CapitalDelta]Kr0subs/.{r->r0}/.awsubs//Simplify;
-\[Rho]chs1j0lpmm=(\[Rho]chs1lpmm)/.Pm1jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-\[Rho]chs2j0lpmm=(\[Rho]chs2lpmm)/.Pm2lsubs/.Pm2jump/.\[CapitalDelta]Kr0subs/.{r->r0}//Simplify;
-];
-
-sourcehlplp=Table[dhlplp[ll],{ll,0,lmax}]/.sourcetermsubs;
-sourcehlmlm=Table[dhlmlm[ll],{ll,0,lmax}]/.sourcetermsubs;
-sourcehmpmp=Table[dhmpmp[ll],{ll,0,lmax}]/.sourcetermsubs;
-sourcehmmmm=Table[dhmmmm[ll],{ll,0,lmax}]/.sourcetermsubs;
-source\[Rho]chlpmm=Table[d\[Rho]chlpmm[ll],{ll,0,lmax}]/.sourcetermsubs;
-(* OK, let's check out whether the linear system of equations has a solution, in principle. *)
-(* We are solving for the unknowns: *)
-
-unknowns=Join[Table[Pm1j0[ll],{ll,lmins1,lmax}],Table[Pm1j1[ll],{ll,lmins1,lmax}],Table[\[Kappa]j0[ll],{ll,lmins0,lmax}],Table[\[Kappa]j1[ll],{ll,lmins0,lmax}]];
-unknownstozero=Table[unknowns[[kk]]->0,{kk,1,Length[unknowns]}];
-
-(* We have the system of equations: *)
-hj0lplp=hs0j0lplp+hs1j0lplp+hs2j0lplp;
-hj0mpmp=hs0j0mpmp+hs1j0mpmp+hs2j0mpmp;
-hj1lplp=(hs0j1lplp+hs1j1lplp+hs2j1lplp)-sourcehlplp;
-hj1mpmp=(hs0j1mpmp+hs1j1mpmp+hs2j1mpmp)-sourcehmpmp;
-
-hj0lmlm=hs0j0lmlm+hs1j0lmlm+hs2j0lmlm;
-hj0mmmm=hs0j0mmmm+hs1j0mmmm+hs2j0mmmm;
-hj1lmlm=(hs0j1lmlm+hs1j1lmlm+hs2j1lmlm)-sourcehlmlm; 
-hj1mmmm=(hs0j1mmmm+hs1j1mmmm+hs2j1mmmm)-sourcehmmmm;
-
-\[Rho]chj0lpmm=\[Rho]chs0j0lpmm+\[Rho]chs1j0lpmm+\[Rho]chs2j0lpmm; (*unnecessary?*)
-\[Rho]hj0lpmp=\[Rho]hs0j0lpmp+\[Rho]hs1j0lpmp+\[Rho]hs2j0lpmp;
-
-
-eqs=Join[Table[hj0lplp[[ll+1]],{ll,lmins0,lmax}],Table[hj1lplp[[ll+1]],{ll,lmins0,lmax}],Table[hj0mpmp[[ll+1]],{ll,lmins2,lmax}],Table[hj1mpmp[[ll+1]],{ll,lmins2,lmax}]]/.s2jumps/.s0jumps;
-brhs=Table[CleanValue[-eqs[[kk]]/.unknownstozero],{kk,1,Length[eqs]}];
-
-(* For Abs[mm] != 1, the number of unknowns should equal the number of equations. However, for Abs[mm]=1, there are two more unknowns than equations,
- and this case must be handled separately, using the spin-1 component of the metric perturbation. *)
-If[Abs[mm]==1,
-ll=1;
-(*eqs=Join[eqs,{\[Rho]chj0lpmm[[ll+1]],\[Rho]chj0lpmm[[ll+2]]}]/.s2jumps/.s0jumps;
-brhs=Table[CleanValue[-eqs[[kk]]/.unknownstozero],{kk,1,Length[eqs]}]//N;
-*)
-eqs=Join[eqs,{hj0lmlm[[ll+1]],hj1lmlm[[ll+1]]}]/.s2jumps/.s0jumps;
-brhs=Table[CleanValue[-eqs[[kk]]/.unknownstozero],{kk,1,Length[eqs]}]//N;
-];
-
-Mmat=CleanMatrix[Table[Coefficient[eqs[[j]],unknowns[[k]]],{j,1,Length[eqs]},{k,1,Length[eqs]}]];
-Det[Mmat];
-Quiet[sol=LinearSolve[Mmat,brhs]]//EchoT["LinearSolve for s1 and \[Kappa] jumps"];
-knowns=Table[unknowns[[k]]->CleanValue@sol[[k]],{k,1,Length[unknowns]}];
 
 
 Print["3. Radial functions and lm modes."];
@@ -1975,6 +2609,8 @@ AppendTo[r0sol,t1//First];
 ,
 "\[Kappa] and h UP series"
 ];
+
+
 
 ltry=Max[2,Abs[mm]]; (* For testing *)
 \[Lambda]0subs={\[Lambda]0->SetPrecision[eigs0[[ltry+1]],prec]};
@@ -2205,6 +2841,7 @@ EchoTiming[
 Pm1uprepl={};Pm1inrepl={};
 For[ll=lmins1,ll<=lmax,ll++,
 t0=TeukolskyRadial@@({-1,ll,mm,a,\[Omega],Method->TeukMethod}/.awsubs);
+Print[{-1,ll,mm,a,\[Omega],Method->TeukMethod}/.awsubs];
 t1=t0["Up"];
 AppendTo[Pm1uprepl,{Pm1[ll][r]->\[Alpha]up*t1[r],Pm1[ll]'[r]->\[Alpha]up*t1'[r]}/.{\[Alpha]up->\[Alpha]s1cos[[ll+1]][[1]]}];
 t1=t0["In"];
@@ -2299,21 +2936,65 @@ Join[EvaluateRHS[h0uprepl,rtry],EvaluateRHS[\[Kappa]0uprepl,rtry]],
 Join[EvaluateRHS[h0inrepl,rtry],EvaluateRHS[\[Kappa]0inrepl,rtry]]
 ];
 
-(* This is a bad way to do it, change in future *)
-tiny\[Epsilon]=SetPrecision[10^(-prec+3),prec];
-rsR[[1]]=r0+tiny\[Epsilon];
-If[rsR[[1]]>r0,Print["True"];];
-
-(* Ngrids (currently for testing)*)
-lNGrid=NGrid["gridL", Transpose@{rsL,rsL}];
-rNGrid=NGrid["gridR", Transpose@{rsR,rsR}];
-
 EchoTiming[
 Monitor[{MMm2gridL,MMm2gridR}=
- Transpose@Table[If[ll>=lmins2,{\[Alpha]s2cos[[ll+1]][[2]] MSTRhor@#/MSTAhor@#,\[Alpha]s2cos[[ll+1]][[1]] MSTRinf@#/MST\[Beta]inf@#}&@MSTMode[{-2,ll,mm,a0,\[Omega]0},{lNGrid,rNGrid},"RadialDerivatives"-> 4],{{0,0,0,0,0},{0,0,0,0,0}}],{ll,0,lmax}],{"s=-2 MSTModes ",ll}],
+ Transpose@Table[
+ If[ll>=lmins2,
+ With[
+ {MM=MMm2vec[[ll+1]]},
+ ConstructSolution[{MSTRhor[MM]/MSTAhor[MM],MSTRinf[MM]/MST\[Beta]inf[MM]}, {Pm2j0[ll],Pm2j1[ll]}/.s2jumps]
+ ]
+ ,
+ {{0,0,0,0,0},{0,0,0,0,0}}
+ ] 
+ ,{ll,0,lmax}]
+ ,
+ {"s=-2 MSTModes ",ll}
+ ],
  "s=-2 MSTModes"
  ];
  
+EchoTiming[MMp2gridL=Table[If[ll>=lmins2,Pp2fromPm2[MMm2gridL[[ll+1]],lNGrid,{ll,mm,a0,\[Omega]0,eigs2[[ll+1]]}],{0,0,0,0,0}],{ll,0,lmax}],"MMp2gridL"];
+EchoTiming[MMp2gridR=Table[If[ll>=lmins2,Pp2fromPm2[MMm2gridR[[ll+1]],rNGrid,{ll,mm,a0,\[Omega]0,eigs2[[ll+1]]}],{0,0,0,0,0}],{ll,0,lmax}],"MMp2gridR"];
+
+EchoTiming[
+Monitor[{MMm1gridL,MMm1gridR}=
+ Transpose@Table[
+ If[ll>=lmins2,
+ With[
+ {MM=MMm1vec[[ll+1]]},
+ ConstructSolution[{MSTRhor[MM]/MSTAhor[MM],MSTRinf[MM]/MST\[Beta]inf[MM]}, {Pm1j0[ll],Pm1j1[ll]}/.knowns]
+ ]
+ ,
+ {{0,0,0},{0,0,0}}
+ ] 
+ ,{ll,0,lmax}]
+ ,
+ {"s=-1 MSTModes ",ll}
+ ],
+ "s=-1 MSTModes"
+ ]; 
+   
+(*EchoTiming[
+Monitor[{MMm1gridL,MMm1gridR}=
+ Transpose@Table[If[ll>=lmins1,{\[Alpha]s1cos[[ll+1]][[2]] MSTRhor@#/MSTAhor@#,\[Alpha]s1cos[[ll+1]][[1]] MSTRinf@#/MST\[Beta]inf@#}&@MSTMode[{-1,ll,mm,a0,\[Omega]0},{lNGrid,rNGrid},"RadialDerivatives"-> 2],{{0,0,0},{0,0,0}}],{ll,0,lmax}],{"s=-1 MSTModes ",ll}],
+ "s=-1 MSTModes"
+ ]; *)
+ 
+EchoTiming[MMp1gridL=Table[If[ll>=lmins1,Pp1fromPm1[MMm1gridL[[ll+1]],lNGrid,{ll,mm,a0,\[Omega]0,eigs1[[ll+1]]}],{0,0,0}],{ll,0,lmax}],"MMp1gridL"];
+EchoTiming[MMp1gridR=Table[If[ll>=lmins1,Pp1fromPm1[MMm1gridR[[ll+1]],rNGrid,{ll,mm,a0,\[Omega]0,eigs1[[ll+1]]}],{0,0,0}],{ll,0,lmax}],"MMp1gridR"];
+
+EchoTiming[
+Monitor[{MMh0gridL,MMh0gridR,MM\[Kappa]0gridL,MM\[Kappa]0gridR}=
+ Transpose@Table[If[ll>=lmins0,
+ ConstructSolutionh\[Kappa][MMh\[Kappa]vec[[ll+1]],{hj0[ll],hj1[ll]}/.s0jumps,{\[Kappa]j0[ll],\[Kappa]j1[ll]}/.knowns],
+ {{0,0,0},{0,0,0},{0,0,0},{0,0,0}}
+ ],
+ {ll,0,lmax}],
+ {"s=0 MSTModes ",ll}],
+ "s=0 MSTModes"
+ ]; 
+
 Print["A. Fill 1D grid."];
 
 
@@ -2350,7 +3031,7 @@ buildh=Function[{rtry},
 	\[CapitalDelta]Ktbl=EvaluateRHS[\[CapitalDelta]Ksubs,rtest]/.awsubs;
 	tmp=GetSpin0subs[rtest];
 	s0subs=Join[tmp,\[Kappa]lsubs/.tmp];
-	Table[If[ll>=lmins2,{h[ll][r],h[ll]'[r],h[ll]''[r]},{0,0,0}],{ll,0,lmax}]/.\[Kappa]lsubs/.hlsubs/.\[Gamma]llsubs/.awsubs/.s0subs/.\[CapitalDelta]Ktbl/.{r->rtest}
+	Table[If[ll>=lmins0,{h[ll][r],h[ll]'[r],h[ll]''[r]},{0,0,0}],{ll,0,lmax}]/.\[Kappa]lsubs/.hlsubs/.\[Gamma]llsubs/.awsubs/.s0subs/.\[CapitalDelta]Ktbl/.{r->rtest}
 	]
  ];
  build\[Kappa]=Function[{rtry},
@@ -2358,7 +3039,7 @@ buildh=Function[{rtry},
 	\[CapitalDelta]Ktbl=EvaluateRHS[\[CapitalDelta]Ksubs,rtest]/.awsubs;
 	tmp=GetSpin0subs[rtest];
 	s0subs=Join[tmp,\[Kappa]lsubs/.tmp];
-	Table[If[ll>=lmins2,{\[Kappa][ll][r],\[Kappa][ll]'[r],\[Kappa][ll]''[r]},{0,0,0}],{ll,0,lmax}]/.\[Kappa]lsubs/.hlsubs/.\[Gamma]llsubs/.awsubs/.s0subs/.\[CapitalDelta]Ktbl/.{r->rtest}
+	Table[If[ll>=lmins0,{\[Kappa][ll][r],\[Kappa][ll]'[r],\[Kappa][ll]''[r]},{0,0,0}],{ll,0,lmax}]/.\[Kappa]lsubs/.hlsubs/.\[Gamma]llsubs/.awsubs/.s0subs/.\[CapitalDelta]Ktbl/.{r->rtest}
 	]
  ];
  hngridL= buildh/@lNGrid;
@@ -2395,6 +3076,9 @@ s0L=Transpose[s0Lgrid/. NGrid[_,data_]:> data,{2,3,1}];
 
 sallR=s2R+s1R+s0R;
 sallL=s2L+s1L+s0L;
+
+ClearMST[];
+ClearSWSH[];
 
 (* Save in a binary format. *)
 ExportOutput[{sallL,sallR,s2L,s2R,s1L,s1R,s0L,s0R},directory,iConfig,dformat]
