@@ -509,7 +509,10 @@ filen=directory<>"data/lm_rsL_"<>ToString[iConfig]<>".dat";
 Export[filen,Transpose@{rstarsL,rsL}];
 filen=directory<>"data/lm_rsR_"<>ToString[iConfig]<>".dat";
 Export[filen,Transpose@{rstarsR,rsR}];*)
-Return[{rsL,rsR}]
+Return[{
+NGrid["gridL", Transpose@{rsL,rsL}],
+NGrid["gridR", Transpose@{rsR,rsR}]
+}]
 ]
 
 
@@ -965,25 +968,27 @@ sourcehlmlm=Table[dhlmlm[ll],{ll,0,lmax}]/.sourcetermsubs;
 sourcehmpmp=Table[dhmpmp[ll],{ll,0,lmax}]/.sourcetermsubs;
 sourcehmmmm=Table[dhmmmm[ll],{ll,0,lmax}]/.sourcetermsubs;
 (*source\[Rho]chlpmm=Table[d\[Rho]chlpmm[ll],{ll,0,lmax}]/.sourcetermsubs;*)
+
 (* OK, let's check out whether the linear system of equations has a solution, in principle. *)
 (* We are solving for the unknowns: *)
-
 unknowns=Join[Table[Pm1j0[ll],{ll,lmins1,lmax}],Table[Pm1j1[ll],{ll,lmins1,lmax}],Table[\[Kappa]j0[ll],{ll,lmins0,lmax}],Table[\[Kappa]j1[ll],{ll,lmins0,lmax}]];
 unknownstozero=Table[unknowns[[kk]]->0,{kk,1,Length[unknowns]}];
 
 (* We have the system of equations: *)
 hj0lplp=hs0j0lplp+hs1j0lplp+hs2j0lplp;
-hj0mpmp=hs0j0mpmp+hs1j0mpmp+hs2j0mpmp;
 hj1lplp=(hs0j1lplp+hs1j1lplp+hs2j1lplp)-sourcehlplp;
+
+hj0mpmp=hs0j0mpmp+hs1j0mpmp+hs2j0mpmp;
 hj1mpmp=(hs0j1mpmp+hs1j1mpmp+hs2j1mpmp)-sourcehmpmp;
 
 hj0lmlm=hs0j0lmlm+hs1j0lmlm+hs2j0lmlm;
-hj0mmmm=hs0j0mmmm+hs1j0mmmm+hs2j0mmmm;
-hj1lmlm=(hs0j1lmlm+hs1j1lmlm+hs2j1lmlm)-sourcehlmlm; 
-hj1mmmm=(hs0j1mmmm+hs1j1mmmm+hs2j1mmmm)-sourcehmmmm;
+hj1lmlm=(hs0j1lmlm+hs1j1lmlm+hs2j1lmlm)-sourcehlmlm;
+
+hj0mmmm=hs0j0mmmm+hs1j0mmmm+hs2j0mmmm; (*unnecessary?*)
+hj1mmmm=(hs0j1mmmm+hs1j1mmmm+hs2j1mmmm)-sourcehmmmm; (*unnecessary?*)
 
 \[Rho]chj0lpmm=\[Rho]chs0j0lpmm+\[Rho]chs1j0lpmm+\[Rho]chs2j0lpmm; (*unnecessary?*)
-\[Rho]hj0lpmp=\[Rho]hs0j0lpmp+\[Rho]hs1j0lpmp+\[Rho]hs2j0lpmp;
+\[Rho]hj0lpmp=\[Rho]hs0j0lpmp+\[Rho]hs1j0lpmp+\[Rho]hs2j0lpmp; (*unnecessary?*)
 
 
 eqs=Join[
@@ -1219,7 +1224,7 @@ ics
 },
 Block[
 {
-$RecursionLimit=$RecursionLimit(*+OptionValue[MaxSteps]*),
+$RecursionLimit=$RecursionLimit+OptionValue[MaxSteps],
 $MinPrecision=WP
 },
 ics=seriesF[m,a,\[Omega],\[Lambda],\[Gamma]ll,r0,OptionValue[Order]];
@@ -1312,8 +1317,8 @@ rhor=If[OptionValue["rhor"]===Automatic,Min@NGridPointList[inGrid],OptionValue["
 rinf=If[OptionValue["rinf"]===Automatic,Max@NGridPointList[upGrid],OptionValue["rinf"]];
 rinmax=Max@NGridPointList[inGrid];(*Print[{rhor,rinmax}];*)
 rupmin=Min@NGridPointList[upGrid];(*Print[{rinf,rupmin}];*)
-EchoTiming[insol=h\[Kappa]TSolve[m,a,\[Omega], \[Lambda]0,\[Gamma]ll,{rhor,rinmax},h\[Kappa]horSeries,FilterRules[{opts},{PrecisionGoal,WorkingPrecision,MaxSteps,Order}]]];
-EchoTiming[upsol=h\[Kappa]TSolve[m,a,\[Omega], \[Lambda]0,\[Gamma]ll,{rinf,rupmin},h\[Kappa]infSeries,FilterRules[{opts},{PrecisionGoal,WorkingPrecision,MaxSteps,Order}]]];
+insol=h\[Kappa]TSolve[m,a,\[Omega], \[Lambda]0,\[Gamma]ll,{rhor,rinmax},h\[Kappa]horSeries,FilterRules[{opts},{PrecisionGoal,WorkingPrecision,MaxSteps,Order}]];
+upsol=h\[Kappa]TSolve[m,a,\[Omega], \[Lambda]0,\[Gamma]ll,{rinf,rupmin},h\[Kappa]infSeries,FilterRules[{opts},{PrecisionGoal,WorkingPrecision,MaxSteps,Order}]];
 hins={insol[[1]]/@inGrid,Derivative[1][insol[[1]]]/@inGrid};
 \[Kappa]ins={insol[[2]]/@inGrid,Derivative[1][insol[[2]]]/@inGrid};
 hups={upsol[[1]]/@upGrid,Derivative[1][upsol[[1]]]/@upGrid};
@@ -2221,7 +2226,10 @@ Order-> 30
 }
 
 
-MetricReconstructRadiative[OD_OrbitalData?CircularEquatorialQ, {lmax0_,mm0_},{rgridL_,rgridR_}, iConfig_,primarypath_,opts:OptionsPattern[]]:=Module[
+MetricReconstructRadiative::gridmismatch = "Expecting first element of left and right NGrids (`2` and `3`) to be equal to the particle position r0=`1`."
+
+
+MetricReconstructRadiative[OD_OrbitalData?CircularEquatorialQ, {lmax0_,mm0_},{lNGrid_NGrid,rNGrid_NGrid}, iConfig_,primarypath_,opts:OptionsPattern[]]:=Module[
 {
 r,ll,\[CapitalOmega]0,lmax,mm,
 prec,a0,r0,\[Omega]0,a\[Omega]0,
@@ -2229,15 +2237,13 @@ lmins2,lmins1,lmins0,
 rinf,xhor,accgoal,qres,rhor,dformat,
 Bmats,eigs,Bmatm2,Bmatm1,Bmat0,Bmatp1,Bmatp2,
 eigs2,eigs1,eigs0,
-rsL,rsR,
 \[Gamma]mat,
 directory,
 sallL,sallR,s2L,s2R,s1L,s1R,s0L,s0R,
 s0Lgrid,s1Lgrid,s2Lgrid,s0Rgrid,s1Rgrid,s2Rgrid,
-hngridL, MMh0gridL,hngridR, MMh0gridR,\[Kappa]ngridL, MM\[Kappa]0gridL,\[Kappa]ngridR,MM\[Kappa]0gridR,
-Pm1ngridL,MMm1gridL,Pm1ngridR,MMm1gridR,Pp1ngridL,MMp1gridL,Pp1ngridR,MMp1gridR,
-Pm2ngridL,MMm2gridL,Pm2ngridR,MMm2gridR,Pp2ngridL,MMp2gridL,Pp2ngridR,MMp2gridR,
-lNGrid, rNGrid,
+MMh0gridL, MMh0gridR,\[Kappa]ngridL, MM\[Kappa]0gridL,MM\[Kappa]0gridR,
+MMm1gridL,MMm1gridR,MMp1gridL,MMp1gridR,
+MMm2gridL,MMm2gridR,MMp2gridL,MMp2gridR,
 s1\[Kappa]jumps,s0jumps,s2jumps,
 \[Kappa]j1,\[Kappa]j0,hj1,hj0,Pm1j0,Pm1j1,Pm2j0,Pm2j1,Pp2j0,Pp2j1,
 MMh\[Kappa]vec,MMm1vec,MMm2vec,
@@ -2255,6 +2261,7 @@ prec=OptionValue[WorkingPrecision]; (* Number of digits to use where required. T
 a0=SetPrecision[ODspin[OD],prec];
 If[PossibleZeroQ[a0],a0=0]; (* In the Schwarzschild case, a0 should be the integer zero. *)
 r0=SetPrecision[ODsemilatusrectum[OD],prec];
+If[r0!= lNGrid[[2,1]]||r0!= rNGrid[[2,1]], Message[MetricReconstructRadiative::gridmismatch, r0,lNGrid[[2,1]],rNGrid[[2,1]]] ];
 lmax=lmax0;
 mm=mm0;
 \[CapitalOmega]0=KerrAzimuthalFrequency[OD];
@@ -2272,9 +2279,6 @@ rhor=(1+Sqrt[1-a0^2]+xhor);
 accgoal=OptionValue["AccuracyGoal"];
 dformat=ToString@OptionValue["dformat"]; (* Data format for output files. *)
 
-rsL=rgridL;
-rsR=rgridR;
-
 (* Set up the b matrices, and the eigenvalue matrices. *)
 PrintTemporary["Calculating B-matrices and Eigenvalues"];
 {Bmats,eigs}=Transpose@Table[
@@ -2286,12 +2290,8 @@ bmatEV[s,mm,a\[Omega]0,lmax,WorkingPrecision->prec,AccuracyGoal->accgoal],
 
 \[Gamma]mat=Bmat0 . CosMixMatrix[0,2,lmax,mm] . (Transpose@Bmat0);
 
+
 Print["2. Generate MSTModes"];
-
-(* Ngrids (currently for testing)*)
-lNGrid=NGrid["gridL", Transpose@{rsL,rsL}];
-rNGrid=NGrid["gridR", Transpose@{rsR,rsR}];
-
 Block[{
 	$MST\[Nu]Precision=accgoal,
 	$MST\[Nu]WorkingPrecision=prec,
@@ -2317,6 +2317,12 @@ Order-> OptionValue[Order]
 ],"Generate h\[Kappa]Modes"];
 
 Print["3. Jumps"];
+Block[
+{
+	$CFPrecision=prec-5,
+	$SWSHaccuracy=accgoal,
+	$SWSHEVPrecision=prec
+},
 s2jumps=Flatten@Table[
 Join[
 CalcJump[{2,mm,eigs2[[ll+1]]},OD,{Pp2j0[ll],Pp2j1[ll]},
@@ -2345,6 +2351,7 @@ Calcsourcesubs[OD,{dhlplp[ll],dhlmlm[ll],dhmpmp[ll],dhmmmm[ll],d\[Rho]chlpmm[ll]
 	 SpinWeightedSphericalHarmonic[-2,ll,mm][0]/Sqrt[2\[Pi]]
 }],
 {ll,lmins0,lmax}
+];
 ];
 
 EchoTiming[
@@ -2419,34 +2426,18 @@ Monitor[{MMh0gridL,MMh0gridR,MM\[Kappa]0gridL,MM\[Kappa]0gridR}=
  ]; 
 
 Print["A. Fill 1D grid."];
-(*Legacy code for clean up*)
-Pm2ngridL=MMm2gridL;
-Pm2ngridR=MMm2gridR;
-Pp2ngridL=MMp2gridL;
-Pp2ngridR=MMp2gridR;
-
-Pm1ngridL=MMm1gridL;
-Pm1ngridR=MMm1gridR;
-Pp1ngridL=MMp1gridL;
-Pp1ngridR=MMp1gridR;
-
-hngridL= MMh0gridL;
-hngridR= MMh0gridR;
-\[Kappa]ngridL= MM\[Kappa]0gridL;
-\[Kappa]ngridR= MM\[Kappa]0gridR;
-
-EchoTiming[s2Rgrid=CalculateSpin2Contributions[a0,mm,\[Omega]0,lmax,rNGrid,{Pp2ngridR,Pm2ngridR},{Bmatm2,Bmatp2}],"s = 2, UP ..."];
+EchoTiming[s2Rgrid=CalculateSpin2Contributions[a0,mm,\[Omega]0,lmax,rNGrid,{MMp2gridR,MMm2gridR},{Bmatm2,Bmatp2}],"s = 2, UP ..."];
 s2R=Transpose[s2Rgrid/. NGrid[_,data_]:> data,{2,3,1}];
-EchoTiming[s1Rgrid=CalculateSpin1Contributions[a0,mm,\[Omega]0,lmax,rNGrid,{Pp1ngridR,Pm1ngridR},{Bmatm1,Bmatp1}],"s = 1, UP ..."];
+EchoTiming[s1Rgrid=CalculateSpin1Contributions[a0,mm,\[Omega]0,lmax,rNGrid,{MMp1gridR,MMm1gridR},{Bmatm1,Bmatp1}],"s = 1, UP ..."];
 s1R=Transpose[s1Rgrid/. NGrid[_,data_]:> data,{2,3,1}];
-EchoTiming[s0Rgrid=CalculateSpin0Contributions[a0,mm,\[Omega]0,lmax,rNGrid,{hngridR,\[Kappa]ngridR},{Bmat0,\[Gamma]mat,eigs0}],"s = 0, UP ..."];
+EchoTiming[s0Rgrid=CalculateSpin0Contributions[a0,mm,\[Omega]0,lmax,rNGrid,{MMh0gridR,MM\[Kappa]0gridR},{Bmat0,\[Gamma]mat,eigs0}],"s = 0, UP ..."];
 s0R=Transpose[s0Rgrid/. NGrid[_,data_]:> data,{2,3,1}];
 
-EchoTiming[s2Lgrid=CalculateSpin2Contributions[a0,mm,\[Omega]0,lmax,lNGrid,{Pp2ngridL,Pm2ngridL},{Bmatm2,Bmatp2}],"s = 2, IN ..."];
+EchoTiming[s2Lgrid=CalculateSpin2Contributions[a0,mm,\[Omega]0,lmax,lNGrid,{MMp2gridL,MMm2gridL},{Bmatm2,Bmatp2}],"s = 2, IN ..."];
 s2L=Transpose[s2Lgrid/. NGrid[_,data_]:> data,{2,3,1}];
-EchoTiming[s1Lgrid=CalculateSpin1Contributions[a0,mm,\[Omega]0,lmax,lNGrid,{Pp1ngridL,Pm1ngridL},{Bmatm1,Bmatp1}],"s = 1, IN ..."];
+EchoTiming[s1Lgrid=CalculateSpin1Contributions[a0,mm,\[Omega]0,lmax,lNGrid,{MMp1gridL,MMm1gridL},{Bmatm1,Bmatp1}],"s = 1, IN ..."];
 s1L=Transpose[s1Lgrid/. NGrid[_,data_]:> data,{2,3,1}];
-EchoTiming[s0Lgrid=CalculateSpin0Contributions[a0,mm,\[Omega]0,lmax,lNGrid,{hngridL,\[Kappa]ngridL},{Bmat0,\[Gamma]mat,eigs0}],"s = 0, IN ..."];
+EchoTiming[s0Lgrid=CalculateSpin0Contributions[a0,mm,\[Omega]0,lmax,lNGrid,{MMh0gridL,MM\[Kappa]0gridL},{Bmat0,\[Gamma]mat,eigs0}],"s = 0, IN ..."];
 s0L=Transpose[s0Lgrid/. NGrid[_,data_]:> data,{2,3,1}];
 
 sallR=s2R+s1R+s0R;
