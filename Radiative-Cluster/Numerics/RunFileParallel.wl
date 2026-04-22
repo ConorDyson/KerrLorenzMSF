@@ -9,8 +9,11 @@
 
 (* 
 SetDirectory[NotebookDirectory[]]; *)
+LaunchKernels[8];
+With[{path=$Path},ParallelEvaluate[$Path=path ] ]
+
 Needs["MetricReconstructRadiative`"]
-(* ParallelNeeds["MetricReconstructRadiative`"] *)
+ParallelNeeds["MetricReconstructRadiative`"]
 
 
 (*Save path*)
@@ -18,7 +21,7 @@ savepath ="/Users/conordyson/Documents/Research/Open/Gravitational-SF/h1Solvers/
 (*Parameters*)
 a=0.6;
 r0=8;
-mmax=2;
+mmax=6;
 tmax=250.0;
 n=4;
 angres=4;
@@ -30,8 +33,8 @@ gvopt=2;
 glgopt=0;
 icopt=0;
 icampl=0.0;
-lmax=30;
-lplot=25;
+lmax=10;
+lplot=8;
 nterms=8;
 inford=7;
 horord=6;
@@ -99,7 +102,8 @@ rmin =rhor + SetPrecision[10^-1,prec];
 {rgridL,rgridR}=MetricReconstructRadiative`Private`BuildGrid[a,{r0,rmin,rmax},{WorkingPrecision->prec,"nterms"-> nterms, (* Number of terms in the spherical expansion. *)"kapord"->kapord, (* \[Kappa]ord is the maximum order of series expansion of \[Kappa] in spheroidal harmonics. *)"rinf"->rinf, (* rinf is the radius at which the series solutions for \[Kappa]_up should set the initial conditions for the integrator. *)"rmax"->rmax,"xhor"->xhor,"inford"->inford, (* The order of the expansion at infinity for the UP function. *)"horord"->horord, (* The order of the expansion at the horizon for the IN function. *)AccuracyGoal->accgoal,"rgrid"->1, (* Use a linearly-spaced grid in the variable: 0 = rstar , 1 = r. *)"rstmin"->rstmin,"rstmax"->rstmax,"nres"->n,(* Resolution in the r* direction:  dr* = M / n  (or dr = M / n). *)"angres"->angres (* Resolution in the \[Theta] direction: number of points = nres * qres. *)}];
 
 
-Monitor[Table[MetricReconstructRadiative[OD,{lmax,j},{rgridL,rgridR},configTags[[j+1]],savepath,
+Print["Now we Calculate the Radiative Solutions in Parallel"];
+(* ParallelTable[MetricReconstructRadiative[OD,{lmax,j},{rgridL,rgridR},configTags[[j+1]],savepath,
 {
 WorkingPrecision->prec,
 "rinf"->rinf,
@@ -108,6 +112,19 @@ AccuracyGoal->accgoal,
 "dformat"->dformat,
 Order->40
 }
-],{j,mvalslist}];,{j}]
+],{j,mvalslist}, Method->"FinestGrained" ]; *)
+
+DistributeDefinitions[OD,lmax,rgridL,rgridR,configTags,savepath,prec,rinf,xhor,accgoal,dformat,mvalslist];
+
+ParallelTable[MetricReconstructRadiative[OD,{lmax,j},{rgridL,rgridR},configTags[[j+1]],savepath,
+{
+WorkingPrecision->prec,
+"rinf"->rinf,
+"xhor"->xhor,
+AccuracyGoal->accgoal,
+"dformat"->dformat,
+Order->40
+}
+],{j,mvalslist}, Method->"FinestGrained" ];
 
 

@@ -16,7 +16,6 @@ BeginPackage["MetricReconstructRadiative`",
 }];
 (*Needs["SpinWeightedSpheroidalHarmonics`"]
 Needs["Teukolsky`"]*)
-Print["Refactor attempt 2..."]
 
 
 (* ::Chapter:: *)
@@ -2213,19 +2212,20 @@ numStr[x_]:=Module[{s=ToString[x]},
 Which[StringMatchQ[s,___~~"."],s<>"0",!StringContainsQ[s,"."],s<>".0",True,s]];
 
 ExportOutput[{sallL_,sallR_},directory_,mm_,a0_,r0_,lmax_,rsL_,rsR_,dformat_]:=Module[
-{fn,toReal,comps,datasets},
-(* Component names matching the 2nd axis of sallL/sallR, shape [nr, 10, nl]. *)
+{fn,tolist,comps,datasets},
+
 comps={"h_l+l+","h_l-l-","h_m+m+","h_m-m-","rho_h_l+m+","rhob_h_l+m-","rhob_h_l-m+","rho_h_l-m-","sigma_delta_h_l+l-","h"};
-(* Pack to machine-precision real. Transpose [nr,nl]->[nl,nr] per component. *)
-toReal[x_]:=Developer`ToPackedArray[N[x]];
-fn=directory<>"data/"<>"h1_a"<>numStr[ Round[a0,3] ]<>"_rp"<>numStr[Round[r0,2] ]<>"_l"<>ToString[lmax]<>"_m"<>ToString[mm]<>".h5";
+
+tolist[x_]:=Developer`ToPackedArray[N[x]];
+
+fn=directory<>"data/"<>"h1_a"<>numStr[ Round[a0,0.01] ]<>"_rp"<>numStr[Round[r0,0.01] ]<>"_l"<>ToString[lmax]<>"_m"<>ToString[mm]<>".h5";
 datasets=Join[
   Flatten[Table[{
-    "/m_"<>ToString[mm]<>"/In/"<>comps[[i]]->toReal[Transpose[sallL[[All,i,All]]]],
-    "/m_"<>ToString[mm]<>"/Up/"<>comps[[i]]->toReal[Transpose[sallR[[All,i,All]]]]
+    "/m_"<>ToString[mm]<>"/In/"<>comps[[i]]->tolist[Transpose[sallL[[All,i,All]]]],
+    "/m_"<>ToString[mm]<>"/Up/"<>comps[[i]]->tolist[Transpose[sallR[[All,i,All]]]]
   },{i,1,10}],1],
-  {"/m_"<>ToString[mm]<>"/r_in"->toReal[rsL],
-   "/m_"<>ToString[mm]<>"/r_up"->toReal[rsR]}
+  {"/m_"<>ToString[mm]<>"/r_in"->tolist[rsL],
+   "/m_"<>ToString[mm]<>"/r_up"->tolist[rsR]}
 ];
 Export[fn,datasets,"HDF5"];
 ]
@@ -2265,6 +2265,7 @@ s0Lgrid,s1Lgrid,s2Lgrid,s0Rgrid,s1Rgrid,s2Rgrid,
 MMh0gridL, MMh0gridR,\[Kappa]ngridL, MM\[Kappa]0gridL,MM\[Kappa]0gridR,
 MMm1gridL,MMm1gridR,MMp1gridL,MMp1gridR,
 MMm2gridL,MMm2gridR,MMp2gridL,MMp2gridR,
+lgrid,rgrid,
 s1\[Kappa]jumps,s0jumps,s2jumps,
 \[Kappa]j1,\[Kappa]j0,hj1,hj0,Pm1j0,Pm1j1,Pm2j0,Pm2j1,Pp2j0,Pp2j1,
 MMh\[Kappa]vec,MMm1vec,MMm2vec,
@@ -2322,8 +2323,10 @@ Block[{
 	$SWSHaccuracy=accgoal,
 	$SWSHEVPrecision=prec
 },
-EchoTiming[MMm2vec = Table[If[ll>=lmins2,MSTMode[{-2,ll,mm,a0,\[Omega]0},{lNGrid,rNGrid},"RadialDerivatives"-> 4 ,"CleanUp"->False,"Interpolator"->OptionValue["Interpolator"]],0],{ll,0,lmax}],"Generate s=-2 MSTModes"];
-EchoTiming[MMm1vec = Table[If[ll>=lmins2,MSTMode[{-1,ll,mm,a0,\[Omega]0},{lNGrid,rNGrid},"RadialDerivatives"-> 2,"CleanUp"->False,"Interpolator"->OptionValue["Interpolator"]],0],{ll,0,lmax}],"Generate s=-1 MSTModes"];
+
+EchoTiming[MMm2vec = Table[If[ll>=lmins2,MSTMode[{-2,ll,mm,a0,\[Omega]0},{lNGrid,rNGrid},"RadialDerivatives"-> 4 ,"CleanUp"->False,"Interpolator"->OptionValue["Interpolator"] ],0],{ll,0,lmax}],"Generate s=-2 MSTModes"];
+EchoTiming[MMm1vec = Table[If[ll>=lmins2,MSTMode[{-1,ll,mm,a0,\[Omega]0},{lNGrid,rNGrid},"RadialDerivatives"-> 2,"CleanUp"->False,"Interpolator"->OptionValue["Interpolator"] ],0],{ll,0,lmax}],"Generate s=-1 MSTModes"];
+
 ];
 
 EchoTiming[Monitor[
@@ -2464,11 +2467,14 @@ s0L=Transpose[s0Lgrid/. NGrid[_,data_]:> data,{2,3,1}];
 sallR=s2R+s1R+s0R;
 sallL=s2L+s1L+s0L;
 
+lgrid= lNGrid/. NGrid[_,data_]:> data;
+rgrid= rNGrid/. NGrid[_,data_]:> data;
+
 ClearMST[];
 ClearSWSH[];
 
 (* Save in a binary format. *)
-ExportOutput[{sallL,sallR,s2L,s2R,s1L,s1R,s0L,s0R},directory,iConfig,dformat]
+ExportOutput[{sallL,sallR},directory,mm,a0,r0,lmax,lgrid,rgrid,dformat];
 ]
 
 
