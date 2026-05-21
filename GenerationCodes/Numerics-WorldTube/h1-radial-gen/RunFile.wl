@@ -7,18 +7,18 @@
 (* ::Subsubsection:: *)
 (*Prelim*)
 
-(* 
+(*
 SetDirectory[NotebookDirectory[]]; *)
 Needs["MetricReconstructRadiative`"]
 (* ParallelNeeds["MetricReconstructRadiative`"] *)
 
 
 (*Save path*)
-savepath ="/Users/conordyson/Documents/Research/Open/Gravitational-SF/h1Solvers/KerrLorenzMSF/Radiative-Cluster/Numerics";
+savepath = "/lustre/hpc/astro/dyson/KerrCircMSFMaarten";
 (*Parameters*)
-a=0.6;
+a=0.99;
 r0=8;
-mmax=6;
+mmax=30;
 tmax=250.0;
 n=10;
 angres=4;
@@ -92,7 +92,7 @@ mvalslist = Table[mi,{mi,mmax}];
 
 xhor=SetPrecision[xhor,prec];
 rprmvals={rp->1+Sqrt[1-a^2],rm->1-Sqrt[1-a^2]};
-rhor=3;  
+rmin=3;
 
 
 {rgridL,rgridR}=MetricReconstructRadiative`Private`BuildGrid[a,{r0,rmin,rmax},{WorkingPrecision->prec,"nterms"-> nterms, (* Number of terms in the spherical expansion. *)"kapord"->kapord, (* \[Kappa]ord is the maximum order of series expansion of \[Kappa] in spheroidal harmonics. *)"rinf"->rinf, (* rinf is the radius at which the series solutions for \[Kappa]_up should set the initial conditions for the integrator. *)"rmax"->rmax,"xhor"->xhor,"inford"->inford, (* The order of the expansion at infinity for the UP function. *)"horord"->horord, (* The order of the expansion at the horizon for the IN function. *)AccuracyGoal->accgoal,"rgrid"->1, (* Use a linearly-spaced grid in the variable: 0 = rstar , 1 = r. *)"rstmin"->rstmin,"rstmax"->rstmax,"nres"->n,(* Resolution in the r* direction:  dr* = M / n  (or dr = M / n). *)"angres"->angres (* Resolution in the \[Theta] direction: number of points = nres * qres. *)}];

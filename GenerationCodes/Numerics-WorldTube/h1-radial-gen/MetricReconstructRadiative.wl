@@ -436,7 +436,7 @@ rp=1+Sqrt[1-a^2];
 rm=1-Sqrt[1-a^2];
 
 
-Print[{rp,rm}];
+
 prec=OptionValue[WorkingPrecision];
 (*rmax=SetPrecision[OptionValue["rmax"],prec];*)   (* rmax is the maximum value at which the interpolating function can be used, whereas rinf is the starting value for the numerical integration, i.e. the radius at which the initial condition for the UP solutions of kappa is set, using the series expansion. *)
 (*rmin =rhor + SetPrecision[10^-1,prec];*)  (* <--- may need to think again about this choice. *)
@@ -445,14 +445,11 @@ rstarmin=If[OptionValue["rstmin"]===Automatic,SetPrecision[rmin,prec],SetPrecisi
 rstarmax=If[OptionValue["rstmax"]===Automatic,SetPrecision[rmax,prec],SetPrecision[OptionValue["rstmax"],prec]];
 nres=OptionValue["nres"];  (* Resolution in the r* direction:  dr* = M / n  (or dr = M / n). *)
 qres=OptionValue["angres"]; (* Resolution in the \[Theta] direction: number of points = nres * qres. *)
-
-
-Print[r+(rp+rm)/(rp-rm)*(rp*Log[(r-rp)/2]-rm*Log[(r-rm)/2])];
-Print["Before"];
 TortoiseCoord[r_]:=
 SetPrecision[r+(rp+rm)/(rp-rm)*(rp*Log[(r-rp)/2]-rm*Log[(r-rm)/2]),prec];
+
+
 InvTortoise[x_?NumericQ]:=r/.FindRoot[TortoiseCoord[r]-x,{r,SetPrecision[rp+(rp (rm+rp) ProductLog[(2 (E^(((rm-rp) (rp-x))/(rm rp)))^(rm/(rm+rp)) (-rm+rp))/(rp (rm+rp))])/(-rm+rp),prec]},WorkingPrecision->prec];
-Print["After"];
 
 
 If[rgrid==0,
@@ -516,6 +513,7 @@ filen=directory<>"data/lm_rsL_"<>ToString[iConfig]<>".dat";
 Export[filen,Transpose@{rstarsL,rsL}];
 filen=directory<>"data/lm_rsR_"<>ToString[iConfig]<>".dat";
 Export[filen,Transpose@{rstarsR,rsR}];*)
+
 Return[{
 NGrid["gridL", Transpose@{rsL,rsL}],
 NGrid["gridR", Transpose@{rsR,rsR}]
@@ -2321,6 +2319,7 @@ bmatEV[s,mm,a\[Omega]0,lmax,WorkingPrecision->prec,AccuracyGoal->accgoal],
 
 
 Print["2. Generate MSTModes"];
+
 Block[{
 	$MST\[Nu]Precision=accgoal,
 	$MST\[Nu]WorkingPrecision=prec,
@@ -2331,8 +2330,10 @@ Block[{
 	$SWSHEVPrecision=prec
 },
 
+
 EchoTiming[MMm2vec = Table[If[ll>=lmins2,MSTMode[{-2,ll,mm,a0,\[Omega]0},{lNGrid,rNGrid},"RadialDerivatives"-> 4 ,"CleanUp"->False,"Interpolator"->OptionValue["Interpolator"] ],0],{ll,0,lmax}],"Generate s=-2 MSTModes"];
 EchoTiming[MMm1vec = Table[If[ll>=lmins2,MSTMode[{-1,ll,mm,a0,\[Omega]0},{lNGrid,rNGrid},"RadialDerivatives"-> 2,"CleanUp"->False,"Interpolator"->OptionValue["Interpolator"] ],0],{ll,0,lmax}],"Generate s=-1 MSTModes"];
+
 
 ];
 

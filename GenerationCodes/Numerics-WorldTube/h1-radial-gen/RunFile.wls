@@ -3,18 +3,22 @@
 (* ::Subsubsection:: *)
 (*Prelim*)
 
+(*Add package directories to path*)
+AppendTo[$Path, "/lustre/hpc/astro/dyson/.Wolfram/Applications/ModGEMS"];
+AppendTo[$Path, DirectoryName[$InputFileName]];
+
 Needs["MetricReconstructRadiative`"]
-ParallelNeeds["MetricReconstructRadiative`"]
 
 
-(*Save path*)
-savepath = "/Users/conordyson/Documents/Research/Open/Gravitational-SF/h1Solvers/KerrLorenzMSF/Radiative-Cluster/Numerics";
-(*Parameters*)
-a = 0.6;
-r0 = 8;
-mmax = 10;
+(*Read (a, r0, savepath) from command-line arguments: wolframscript RunFile.wls -- <a> <r0> <savepath>*)
+{a, r0} = ToExpression /@ $ScriptCommandLine[[2;;3]];
+savepath = $ScriptCommandLine[[4]];
+Print["Job started: a = ", a, ", r0 = ", r0, ", savepath = ", savepath];
+
+(*Fixed parameters*)
+mmax = 30;
 tmax = 250.0;
-n = 4;
+n = 10;
 angres = 4;
 twr = 16;
 twq = 8;
@@ -24,14 +28,14 @@ gvopt = 2;
 glgopt = 0;
 icopt = 0;
 icampl = 0.0;
-lmax = 5;
-lplot = 6;
+lmax = 50;
+lplot = 45;
 nterms = 8;
 inford = 7;
 horord = 6;
 rinf = 4000.0;
 xhor = 0.0001;
-rmax = 60.0;
+rmax = 30.0;
 accgoal = 24;
 kapord = 8;
 prec = 60;
@@ -44,7 +48,6 @@ dformat = "Real64";
 (*Path Directory*)
 
 
-(*Create the configuration files*)
 parituclardirectory = (savepath <> "/data" <> ToString[Round[1000*a]] <> "/data" <> ToString[Round[1000*a]] <> "-" <> ToString[Round[r0*10, 1]]);
 
 configformat[m_] := Module[{text, filename, filetag},
@@ -63,8 +66,6 @@ If[!DirectoryQ[parituclardirectory <> "/jumpchecks"], CreateDirectory[parituclar
 
 (*Create the configuration files*)
 Files = Table[configformat[i], {i, 0, mmax}];
-
-(*Clear all variables except the one you want to keep*)
 configTags = Files[[;; , 1]];
 configFiles = Files[[;; , 2]];
 
@@ -81,24 +82,23 @@ OD = OrbitalData[{a, r0, 0, 0, 0},
 mvalslist = Table[mi, {mi, mmax}];
 
 
-xhor = SetPrecision[xhor, prec];
+xhorP = SetPrecision[xhor, prec];
 rprmvals = {rp -> 1 + Sqrt[1 - a^2], rm -> 1 - Sqrt[1 - a^2]};
-rhor = (rp + xhor) /. rprmvals;
-rmin = rhor + SetPrecision[10^-1, prec];
+rhor = (rp + xhorP) /. rprmvals;
+(* rmin = rhor + SetPrecision[10^-1, prec];*)
+rmin = 3; 
 
 
-{rgridL, rgridR} = MetricReconstructRadiative`Private`BuildGrid[a, {r0, rmin, rmax}, {WorkingPrecision -> prec, "nterms" -> nterms, "kapord" -> kapord, "rinf" -> rinf, "rmax" -> rmax, "xhor" -> xhor, "inford" -> inford, "horord" -> horord, AccuracyGoal -> accgoal, "rgrid" -> 1, "rstmin" -> rstmin, "rstmax" -> rstmax, "nres" -> n, "angres" -> angres}];
+{rgridL, rgridR} = MetricReconstructRadiative`Private`BuildGrid[a, {r0, rmin, rmax}, {WorkingPrecision -> prec, "nterms" -> nterms, "kapord" -> kapord, "rinf" -> rinf, "rmax" -> rmax, "xhor" -> xhorP, "inford" -> inford, "horord" -> horord, AccuracyGoal -> accgoal, "rgrid" -> 1, "rstmin" -> rstmin, "rstmax" -> rstmax, "nres" -> n, "angres" -> angres}];
 
 
-DistributeDefinitions[OD, lmax, rgridL, rgridR, configTags, savepath, prec, rinf, xhor, accgoal, dformat];
-
-Print["Now we Calculate the Radiative Solutions in Parallel"];
-ParallelTable[
+Print["Now we Calculate the Radiative Solutions"];
+Table[
   MetricReconstructRadiative[OD, {lmax, j}, {rgridL, rgridR}, configTags[[j + 1]], savepath,
     {
       WorkingPrecision -> prec,
       "rinf" -> rinf,
-      "xhor" -> xhor,
+      "xhor" -> xhorP,
       AccuracyGoal -> accgoal,
       "dformat" -> dformat
     }
