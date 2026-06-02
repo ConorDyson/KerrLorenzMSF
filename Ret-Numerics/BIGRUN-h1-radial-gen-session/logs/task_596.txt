@@ -1,0 +1,324 @@
+Task 596 on node657.cluster: a=0.8 r0=40.0
+Job started: a = 0.8, r0 = 40., savepath = /lustre/astro/dyson/DataFiles/KerrCircDiskData/h1_radial
+Warning: rstarmin is outside the allowed range.
+Now we Calculate the Radiative Solutions
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 47.046794
+>> Generate s=-1 MSTModes 46.145333
+
+MetricReconstructRadiative`Private`hκTSolve::icaccuraccy: Warning: asymptotic expansion of order 40 at r=4000.000000000000000000000000000000000000000000000000000000000000 provides insufficiently accurate initial conditions to meet PrecsionGoal, 24.
+
+MetricReconstructRadiative`Private`hκTSolve::icaccuraccy: Warning: asymptotic expansion of order 40 at r=4000.000000000000000000000000000000000000000000000000000000000000 provides insufficiently accurate initial conditions to meet PrecsionGoal, 24.
+
+MetricReconstructRadiative`Private`hκTSolve::icaccuraccy: Warning: asymptotic expansion of order 40 at r=4000.000000000000000000000000000000000000000000000000000000000000 provides insufficiently accurate initial conditions to meet PrecsionGoal, 24.
+
+General::stop: Further output of MetricReconstructRadiative`Private`hκTSolve::icaccuraccy will be suppressed during this calculation.
+>> Generate hκModes 122.604097
+3. Jumps
+>> 0.326294
+>> 2.088916
+>> 2.846619
+>> 3.636141
+>> 45.659576
+>> 16.571623
+>> LinearSolve for s1 and κ jumps 0.033119
+>> κ and s1 jumps 71.975097
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.185832
+>> MMp2gridL 3.433143
+>> MMp2gridR 1.867863
+>> s=-1 MSTModes 0.059001
+>> MMp1gridL 0.113684
+>> MMp1gridR 0.072329
+>> s=0 MSTModes 0.138803
+A. Fill 1D grid.
+>> s = 2, UP ... 21.588052
+>> s = 1, UP ... 1.605049
+>> s = 0, UP ... 4.033765
+>> s = 2, IN ... 24.003199
+>> s = 1, IN ... 0.927778
+>> s = 0, IN ... 5.39054
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 60.065582
+>> Generate s=-1 MSTModes 59.690127
+>> Generate hκModes 114.193048
+3. Jumps
+>> 0.310958
+>> 2.085942
+>> 3.105622
+>> 3.297562
+>> 44.785171
+>> 15.13164
+>> LinearSolve for s1 and κ jumps 1.321545
+>> κ and s1 jumps 70.759951
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.175239
+>> MMp2gridL 3.48156
+>> MMp2gridR 1.911555
+>> s=-1 MSTModes 0.093263
+>> MMp1gridL 0.201378
+>> MMp1gridR 0.111785
+>> s=0 MSTModes 0.155308
+A. Fill 1D grid.
+>> s = 2, UP ... 21.640464
+>> s = 1, UP ... 2.900162
+>> s = 0, UP ... 4.454167
+>> s = 2, IN ... 23.783174
+>> s = 1, IN ... 4.993871
+>> s = 0, IN ... 7.177726
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 68.690665
+>> Generate s=-1 MSTModes 67.635318
+>> Generate hκModes 107.71572
+3. Jumps
+>> 0.308209
+>> 1.736443
+>> 3.204924
+>> 2.86045
+>> 38.355405
+>> 12.921997
+>> LinearSolve for s1 and κ jumps 0.992539
+>> κ and s1 jumps 60.957931
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.195223
+>> MMp2gridL 3.353971
+>> MMp2gridR 1.825624
+>> s=-1 MSTModes 0.092283
+>> MMp1gridL 0.195954
+>> MMp1gridR 0.106809
+>> s=0 MSTModes 0.148499
+A. Fill 1D grid.
+>> s = 2, UP ... 21.232468
+>> s = 1, UP ... 2.879623
+>> s = 0, UP ... 4.353939
+>> s = 2, IN ... 22.954548
+>> s = 1, IN ... 4.978298
+>> s = 0, IN ... 6.9089
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 74.663227
+>> Generate s=-1 MSTModes 73.946267
+>> Generate hκModes 102.939952
+3. Jumps
+>> 0.288819
+>> 1.639398
+>> 3.0999
+>> 2.484083
+>> 34.428067
+>> 11.332496
+>> LinearSolve for s1 and κ jumps 1.171766
+>> κ and s1 jumps 54.995167
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.172241
+>> MMp2gridL 3.266627
+>> MMp2gridR 1.776536
+>> s=-1 MSTModes 0.090159
+>> MMp1gridL 0.191087
+>> MMp1gridR 0.104523
+>> s=0 MSTModes 0.146161
+A. Fill 1D grid.
+>> s = 2, UP ... 20.7601
+>> s = 1, UP ... 2.813954
+>> s = 0, UP ... 4.282471
+>> s = 2, IN ... 22.312294
+>> s = 1, IN ... 4.844499
+>> s = 0, IN ... 6.882593
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 80.905654
+>> Generate s=-1 MSTModes 79.505654
+>> Generate hκModes 98.28679
+3. Jumps
+>> 0.283846
+>> 1.47285
+>> 3.044012
+>> 2.23902
+>> 31.044092
+>> 9.806818
+>> LinearSolve for s1 and κ jumps 1.066786
+>> κ and s1 jumps 49.519272
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.167481
+>> MMp2gridL 3.169323
+>> MMp2gridR 1.712392
+>> s=-1 MSTModes 0.086377
+>> MMp1gridL 0.184975
+>> MMp1gridR 0.10058
+>> s=0 MSTModes 0.135867
+A. Fill 1D grid.
+>> s = 2, UP ... 20.522326
+>> s = 1, UP ... 2.682891
+>> s = 0, UP ... 4.11697
+>> s = 2, IN ... 21.131175
+>> s = 1, IN ... 4.69872
+>> s = 0, IN ... 6.554767
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 87.026913
+>> Generate s=-1 MSTModes 85.05346
+>> Generate hκModes 94.679845
+3. Jumps
+>> 0.271969
+>> 1.32255
+>> 2.968426
+>> 1.914457
+>> 27.918427
+>> 8.650092
+>> LinearSolve for s1 and κ jumps 0.913584
+>> κ and s1 jumps 44.532864
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.162908
+>> MMp2gridL 3.022604
+>> MMp2gridR 1.642067
+>> s=-1 MSTModes 0.082885
+>> MMp1gridL 0.178497
+>> MMp1gridR 0.096654
+>> s=0 MSTModes 0.131535
+A. Fill 1D grid.
+>> s = 2, UP ... 19.986613
+>> s = 1, UP ... 2.614487
+>> s = 0, UP ... 4.002903
+>> s = 2, IN ... 20.133269
+>> s = 1, IN ... 4.456978
+>> s = 0, IN ... 6.243267
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 91.890683
+>> Generate s=-1 MSTModes 90.210549
+>> Generate hκModes 89.915288
+3. Jumps
+>> 0.261211
+>> 1.182097
+>> 2.899059
+>> 1.664611
+>> 24.642203
+>> 7.415171
+>> LinearSolve for s1 and κ jumps 1.108425
+>> κ and s1 jumps 39.651965
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.153821
+>> MMp2gridL 2.915475
+>> MMp2gridR 1.591859
+>> s=-1 MSTModes 0.082196
+>> MMp1gridL 0.177257
+>> MMp1gridR 0.096918
+>> s=0 MSTModes 0.135052
+A. Fill 1D grid.
+>> s = 2, UP ... 19.708528
+>> s = 1, UP ... 2.491071
+>> s = 0, UP ... 3.853492
+>> s = 2, IN ... 18.933792
+>> s = 1, IN ... 4.138904
+>> s = 0, IN ... 5.693303
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 95.165543
+>> Generate s=-1 MSTModes 93.155893
+>> Generate hκModes 85.590739
+3. Jumps
+>> 0.245549
+>> 1.036903
+>> 2.723724
+>> 1.416242
+>> 21.768781
+>> 6.411659
+>> LinearSolve for s1 and κ jumps 0.943449
+>> κ and s1 jumps 34.917772
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.150633
+>> MMp2gridL 2.76798
+>> MMp2gridR 1.520966
+>> s=-1 MSTModes 0.07705
+>> MMp1gridL 0.165265
+>> MMp1gridR 0.090064
+>> s=0 MSTModes 0.121741
+A. Fill 1D grid.
+>> s = 2, UP ... 19.264324
+>> s = 1, UP ... 2.395217
+>> s = 0, UP ... 3.751628
+>> s = 2, IN ... 18.12312
+>> s = 1, IN ... 3.929764
+>> s = 0, IN ... 5.459175
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 98.384007
+>> Generate s=-1 MSTModes 95.790476
+>> Generate hκModes 81.203452
+3. Jumps
+>> 0.241088
+>> 0.939414
+>> 2.567326
+>> 1.234196
+>> 18.796446
+>> 5.476218
+>> LinearSolve for s1 and κ jumps 0.008927
+>> κ and s1 jumps 29.579356
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.176283
+>> MMp2gridL 2.627585
+>> MMp2gridR 1.442651
+>> s=-1 MSTModes 0.073183
+>> MMp1gridL 0.16001
+>> MMp1gridR 0.087463
+>> s=0 MSTModes 0.115017
+A. Fill 1D grid.
+>> s = 2, UP ... 18.944347
+>> s = 1, UP ... 2.269313
+>> s = 0, UP ... 3.516764
+>> s = 2, IN ... 16.455626
+>> s = 1, IN ... 3.424448
+>> s = 0, IN ... 4.927279
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 97.984862
+>> Generate s=-1 MSTModes 96.98476
+>> Generate hκModes 77.549125
+3. Jumps
+>> 0.222246
+>> 0.848394
+>> 2.393143
+>> 1.02141
+>> 16.30006
+>> 4.514159
+>> LinearSolve for s1 and κ jumps 0.007173
+>> κ and s1 jumps 25.584243
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.171083
+>> MMp2gridL 2.504832
+>> MMp2gridR 1.37638
+>> s=-1 MSTModes 0.070609
+>> MMp1gridL 0.150714
+>> MMp1gridR 0.082374
+>> s=0 MSTModes 0.110457
+A. Fill 1D grid.
+>> s = 2, UP ... 18.438699
+>> s = 1, UP ... 2.154746
+>> s = 0, UP ... 3.339207
+>> s = 2, IN ... 15.335586
+>> s = 1, IN ... 3.171131
+>> s = 0, IN ... 4.523498
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 94.943386
+>> Generate s=-1 MSTModes 94.779086
+>> Generate hκModes 73.658433
+3. Jumps
+[2026-05-28T12:31:49.373] error: StepId=60711708.batch exceeded memory limit (3317695488 > 3221225472), being killed
+[2026-05-28T12:31:49.379] error: *** JOB 60711708 ON node657 CANCELLED AT 2026-05-28T12:31:49 DUE to SIGNAL Killed ***
+[2026-05-28T12:31:49.385] error: StepId=60711708.batch exceeded memory limit (3317695488 > 3221225472), being killed
+[2026-05-28T12:31:49.390] error: Exceeded job memory limit
+[2026-05-28T12:31:49.391] error: Exceeded job memory limit

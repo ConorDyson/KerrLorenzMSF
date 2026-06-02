@@ -1,0 +1,64 @@
+Task 42 on node678.cluster: a=0.000000001 r0=27.0
+Job started: a = 1.*^-9, r0 = 27., savepath = /lustre/astro/dyson/DataFiles/KerrCircDiskData/h1_radial
+Warning: rstarmin is outside the allowed range.
+Now we Calculate the Radiative Solutions
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 1.012964
+>> Generate s=-1 MSTModes 1.008492
+>> Generate hκModes 9.557313
+3. Jumps
+>> 0.008795
+>> 0.003681
+>> 0.121242
+>> 0.003988
+>> 0.019363
+>> 0.005513
+>> LinearSolve for s1 and κ jumps 0.000359
+>> κ and s1 jumps 0.171178
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.005304
+>> MMp2gridL 0.076782
+>> MMp2gridR 0.103578
+>> s=-1 MSTModes 0.002091
+>> MMp1gridL 0.005134
+>> MMp1gridR 0.006333
+>> s=0 MSTModes 0.00751
+A. Fill 1D grid.
+>> s = 2, UP ... 0.190621
+>> s = 1, UP ... 0.031473
+>> s = 0, UP ... 0.076534
+>> s = 2, IN ... 0.150438
+>> s = 1, IN ... 0.034604
+>> s = 0, IN ... 0.066261
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 1.075033
+>> Generate s=-1 MSTModes 1.114136
+>> Generate hκModes 4.763986
+3. Jumps
+>> 0.006767
+>> 0.002818
+>> 0.129095
+>> 0.002796
+>> 0.013408
+>> 0.002639
+>> LinearSolve for s1 and κ jumps 0.000287
+>> κ and s1 jumps 0.163281
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.005922
+>> MMp2gridL 0.077582
+>> MMp2gridR 0.105016
+>> s=-1 MSTModes 0.003244
+>> MMp1gridL 0.004575
+>> MMp1gridR 0.006372
+>> s=0 MSTModes 0.005072
+A. Fill 1D grid.
+>> s = 2, UP ... 0.127133
+>> s = 1, UP ... 0.034446
+>> s = 0, UP ... 0.059317
+>> s = 2, IN ... 0.11527
+>> s = 1, IN ... 0.031307
+>> s = 0, IN ... 0.05234

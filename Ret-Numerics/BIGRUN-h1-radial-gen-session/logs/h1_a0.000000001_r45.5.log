@@ -1,0 +1,68 @@
+Task 79 on node678.cluster: a=0.000000001 r0=45.5
+Job started: a = 1.*^-9, r0 = 45.5, savepath = /lustre/astro/dyson/DataFiles/KerrCircDiskData/h1_radial
+Warning: rstarmin is outside the allowed range.
+Now we Calculate the Radiative Solutions
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 1.04253
+>> Generate s=-1 MSTModes 0.991318
+
+MetricReconstructRadiative`Private`hκTSolve::icaccuraccy: Warning: asymptotic expansion of order 50 at r=4000.0000000000000000000000000000000000000000000000000000000000000000000000 provides insufficiently accurate initial conditions to meet PrecsionGoal, 24.
+
+MetricReconstructRadiative`Private`hκTSolve::icaccuraccy: Warning: asymptotic expansion of order 50 at r=4000.0000000000000000000000000000000000000000000000000000000000000000000000 provides insufficiently accurate initial conditions to meet PrecsionGoal, 24.
+>> Generate hκModes 9.4465
+3. Jumps
+>> 0.00893
+>> 0.003659
+>> 0.106605
+>> 0.003951
+>> 0.019638
+>> 0.00548
+>> LinearSolve for s1 and κ jumps 0.000386
+>> κ and s1 jumps 0.156606
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.005356
+>> MMp2gridL 0.13264
+>> MMp2gridR 0.047414
+>> s=-1 MSTModes 0.002005
+>> MMp1gridL 0.008045
+>> MMp1gridR 0.003234
+>> s=0 MSTModes 0.007764
+A. Fill 1D grid.
+>> s = 2, UP ... 0.107874
+>> s = 1, UP ... 0.024412
+>> s = 0, UP ... 0.049289
+>> s = 2, IN ... 0.227837
+>> s = 1, IN ... 0.036781
+>> s = 0, IN ... 0.088836
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 1.081808
+>> Generate s=-1 MSTModes 1.06545
+>> Generate hκModes 4.736965
+3. Jumps
+>> 0.006579
+>> 0.002813
+>> 0.114243
+>> 0.002766
+>> 0.013286
+>> 0.002572
+>> LinearSolve for s1 and κ jumps 0.000283
+>> κ and s1 jumps 0.148046
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 0.005856
+>> MMp2gridL 0.133533
+>> MMp2gridR 0.047725
+>> s=-1 MSTModes 0.00316
+>> MMp1gridL 0.007845
+>> MMp1gridR 0.002855
+>> s=0 MSTModes 0.004772
+A. Fill 1D grid.
+>> s = 2, UP ... 0.082964
+>> s = 1, UP ... 0.021739
+>> s = 0, UP ... 0.038887
+>> s = 2, IN ... 0.147071
+>> s = 1, IN ... 0.04118
+>> s = 0, IN ... 0.067684
