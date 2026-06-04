@@ -16,7 +16,7 @@ savepath = $ScriptCommandLine[[4]];
 Print["Job started: a = ", a, ", r0 = ", r0, ", savepath = ", savepath];
 
 (*Fixed parameters*)
-mmax = 2;
+mmax = 25;
 tmax = 250.0;
 n = 10;
 angres = 4;
@@ -28,8 +28,8 @@ gvopt = 2;
 glgopt = 0;
 icopt = 0;
 icampl = 0.0;
-lmax = 5;
-lplot = 5;
+lmax = 30;
+lplot = 25;
 nterms = 8;
 inford = 7;
 horord = 6;
@@ -38,7 +38,7 @@ xhor = 0.0001;
 rmax = 500.0;
 accgoal = 30;
 kapord = 8;
-prec = 100;
+prec = 120;
 rstmin = -15.0;
 rstmax = 500.0;
 dformat = "Real64";
@@ -83,7 +83,7 @@ mvalslist = Table[mi, {mi, mmax}];
 xhorP = SetPrecision[xhor, prec];
 rprmvals = {rp -> 1 + Sqrt[1 - a^2], rm -> 1 - Sqrt[1 - a^2]};
 rhor = (rp + xhorP) /. rprmvals;
-rmin = rhor + 0.1;
+rmin = rhor + 0.1`100;
 
 
 {rgridL, rgridR} = MetricReconstructRadiative`Private`BuildGrid[a, {r0, rmin, rmax}, {WorkingPrecision -> prec, "nterms" -> nterms, "kapord" -> kapord, "rinf" -> rinf, "rmax" -> rmax, "xhor" -> xhorP, "inford" -> inford, "horord" -> horord, AccuracyGoal -> accgoal, "rgrid" -> 1, "rstmin" -> rstmin, "rstmax" -> rstmax, "nres" -> n, "angres" -> angres}];

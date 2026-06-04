@@ -8,13 +8,13 @@ R0_VALS=(7.8 7.9 8.0 8.1 8.2)
 JOBS_PER_NODE=15
 
 SCRIPT_DIR="/groups/astro/dyson/Open/KerrLorenzMSF/Ret-Numerics/h1-radial-gen"
-SAVEPATH="/lustre/astro/dyson/DataFiles/KerrCircSourceFiles/h1Radial"
+SAVEPATH="/lustre/astro/dyson/DataFiles/KerrCircSourceFiles/h1RadialAsymptotic"
 
 
-mkdir -p "${SCRIPT_DIR}/logs"
+mkdir -p "${SCRIPT_DIR}/logsAsymptotic"
 
 # Build the pairs list file (one "a r0" per line, 1-indexed by array task ID)
-PAIRS_FILE="${SCRIPT_DIR}/logs/pairs.txt"
+PAIRS_FILE="${SCRIPT_DIR}/logsAsymptotic/pairs.txt"
 > "$PAIRS_FILE"
 for a in "${A_VALS[@]}"; do
   for r0 in "${R0_VALS[@]}"; do
@@ -26,7 +26,7 @@ NTOTAL=$(wc -l < "$PAIRS_FILE")
 echo "Total (a, r0) pairs: ${NTOTAL}"
 
 # Write the array job script
-JOBFILE="${SCRIPT_DIR}/logs/array_job.sh"
+JOBFILE="${SCRIPT_DIR}/logsAsymptotic/array_job.sh"
 cat > "$JOBFILE" << EOF
 #!/bin/bash
 #SBATCH --job-name=h1_radial
@@ -37,8 +37,8 @@ cat > "$JOBFILE" << EOF
 #SBATCH --cpus-per-task=1
 #SBATCH --threads-per-core=1
 #SBATCH --array=1-${NTOTAL}%$((NTOTAL < JOBS_PER_NODE ? NTOTAL : JOBS_PER_NODE))
-#SBATCH --output=${SCRIPT_DIR}/logs/task_%a.txt
-#SBATCH --error=${SCRIPT_DIR}/logs/task_%a.txt
+#SBATCH --output=${SCRIPT_DIR}/logsAsymptotic/task_%a.txt
+#SBATCH --error=${SCRIPT_DIR}/logsAsymptotic/task_%a.txt
 
 PAIRS_FILE="${PAIRS_FILE}"
 SCRIPT_DIR="${SCRIPT_DIR}"
@@ -48,7 +48,7 @@ SAVEPATH="${SAVEPATH}"
 read -r a r0 <<< \$(sed -n "\${SLURM_ARRAY_TASK_ID}p" "\$PAIRS_FILE")
 
 # Redirect stdout+stderr to a descriptive log file now that we know a and r0
-LOG="\${SCRIPT_DIR}/logs/h1_a\${a}_r\${r0}.log"
+LOG="\${SCRIPT_DIR}/logsAsymptotic/h1_a\${a}_r\${r0}.log"
 exec > "\$LOG" 2>&1
 
 echo "Task \$SLURM_ARRAY_TASK_ID on \$(hostname): a=\$a r0=\$r0"

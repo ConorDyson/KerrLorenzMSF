@@ -1,0 +1,69 @@
+Task 4 on node708.cluster: a=0.00000000000001 r0=8.1
+Job started: a = 1.*^-14, r0 = 8.1, savepath = /lustre/astro/dyson/DataFiles/KerrCircSourceFiles/h1RadialAsymptotic
+Warning: rstarmin is outside the allowed range.
+Now we Calculate the Radiative Solutions
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 433.847468
+>> Generate s=-1 MSTModes 449.910789
+>> Generate hκModes 2223.339979
+3. Jumps
+>> 0.869449
+>> 6.046948
+>> 6.699641
+>> 41.295787
+>> 252.889447
+>> 170.978133
+>> LinearSolve for s1 and κ jumps 0.0063
+>> κ and s1 jumps 480.870676
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 2.548527
+>> MMp2gridL 1.297151
+>> MMp2gridR 100.621479
+>> s=-1 MSTModes 0.822649
+>> MMp1gridL 0.053448
+>> MMp1gridR 5.16212
+>> s=0 MSTModes 1.956278
+A. Fill 1D grid.
+>> s = 2, UP ... 699.093365
+>> s = 1, UP ... 21.488785
+>> s = 0, UP ... 268.386135
+>> s = 2, IN ... 14.911254
+
+                                                                                                                                         -302                          -7
+General::munfl: 1.55246282151552123300880130638124416362074133752121511643883758174064520934927128933288348105174203894940709657398071 10     (0.0000374186 - 9.5359 10   I) is too small to represent as a normalized machine number; precision may be lost.
+
+                                                                                                                                         -302                           -7
+General::munfl: 1.55246282151552123300880130638124416362074133752121511643883758174064520934927128933288348105174203894940709657398071 10     (0.0000188562 - 4.75316 10   I) is too small to represent as a normalized machine number; precision may be lost.
+
+                                                                                                                                         -302            -6             -7
+General::munfl: 1.55246282151552123300880130638124416362074133752121511643883758174064520934927128933288348105174203894940709657398071 10     (9.21237 10   - 2.29881 10   I) is too small to represent as a normalized machine number; precision may be lost.
+
+General::stop: Further output of General::munfl will be suppressed during this calculation.
+>> s = 1, IN ... 1.289683
+>> s = 0, IN ... 3.288629
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 444.133319
+>> Generate s=-1 MSTModes 442.644153
+>> Generate hκModes 2172.782509
+3. Jumps
+>> 0.802493
+>> 6.103113
+>> 7.765424
+>> 35.588105
+>> 222.880228
+>> 146.022161
+>> LinearSolve for s1 and κ jumps 0.571867
+>> κ and s1 jumps 421.210777
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 2.584816
+>> MMp2gridL 1.272807
+>> MMp2gridR 100.771429
+>> s=-1 MSTModes 1.253217
+>> MMp1gridL 0.072266
+>> MMp1gridR 5.507838
+>> s=0 MSTModes 2.121013
+A. Fill 1D grid.
