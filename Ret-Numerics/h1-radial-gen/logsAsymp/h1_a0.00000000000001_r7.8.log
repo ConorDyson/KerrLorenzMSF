@@ -558,3 +558,33 @@ Calculating B-matrices and Eigenvalues
 2. Generate MSTModes
 >> Generate s=-2 MSTModes 433.393759
 >> Generate s=-1 MSTModes 426.852644
+>> Generate hκModes 5527.3166
+3. Jumps
+>> 0.385782
+>> 0.684714
+>> 4.209546
+>> 1.757875
+>> 14.092493
+>> 6.620893
+>> LinearSolve for s1 and κ jumps 0.420598
+>> κ and s1 jumps 28.782262
+4. Prepare grid and mode functions.
+>> s=-2 MSTModes 1.054065
+>> MMp2gridL 9.190541
+>> MMp2gridR 120.194716
+>> s=-1 MSTModes 2.708987
+>> MMp1gridL 5.371712
+>> MMp1gridR 5.850262
+>> s=0 MSTModes 2.413677
+A. Fill 1D grid.
+>> s = 2, UP ... 4053.699813
+>> s = 1, UP ... 353.125628
+>> s = 0, UP ... 689.575579
+>> s = 2, IN ... 267.37384
+>> s = 1, IN ... 28.947434
+>> s = 0, IN ... 76.173852
+1. Preliminaries.
+Calculating B-matrices and Eigenvalues
+2. Generate MSTModes
+>> Generate s=-2 MSTModes 19447.943435
+>> Generate s=-1 MSTModes 3437.376462
